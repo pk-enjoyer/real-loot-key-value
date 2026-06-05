@@ -1,3 +1,4 @@
+![image](https://img.shields.io/endpoint?url=https://api.runelite.net/pluginhub/shields/installs/plugin/real-loot-key-value)
 # Real Loot Key Value
 
 Real Loot Key Value shows the real Grand Exchange value of PvP loot keys directly in the loot chest interface.
