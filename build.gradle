@@ -1,0 +1,112 @@
+plugins {
+	id 'java'
+}
+
+repositories {
+	mavenLocal()
+	maven {
+		url = 'https://repo.runelite.net'
+		content {
+			includeGroupByRegex("net\\.runelite.*")
+		}
+	}
+	mavenCentral()
+}
+
+def runeLiteVersion = 'latest.release'
+
+dependencies {
+	compileOnly group: 'net.runelite', name: 'client', version: runeLiteVersion
+
+	testImplementation 'junit:junit:4.12'
+	testImplementation 'org.mockito:mockito-core:4.11.0'
+	testImplementation group: 'net.runelite', name: 'client', version: runeLiteVersion
+	testImplementation group: 'net.runelite', name: 'jshell', version: runeLiteVersion
+}
+
+sourceSets {
+	runelitePatch {
+		java.srcDir 'src/runelitePatch/java'
+		compileClasspath += configurations.testRuntimeClasspath
+	}
+}
+
+group = 'com.reallootkeyvalue'
+version = '1.0.0-beta'
+
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+	options.release.set(11)
+}
+
+def isRuneLiteClientJar = { File file ->
+	file.name ==~ /client-\d+\.\d+\.\d+(\.\d+)?(-\d{8}\.\d{6}-\d+)?\.jar/ &&
+		file.absolutePath.contains('/net.runelite/client/')
+}
+
+def runeLiteClientJar = {
+	configurations.testRuntimeClasspath.files.find { file ->
+		isRuneLiteClientJar(file)
+	}
+}
+
+tasks.register('patchedRuneliteClientJar', Jar) {
+	dependsOn configurations.testRuntimeClasspath
+	dependsOn tasks.named('compileRunelitePatchJava')
+	archiveClassifier.set('runelite-client-patched')
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	from {
+		def clientJar = runeLiteClientJar()
+		if (clientJar == null) {
+			throw new GradleException('Unable to find RuneLite client jar on testRuntimeClasspath')
+		}
+		zipTree(clientJar)
+	} {
+		exclude 'META-INF/INDEX.LIST'
+		exclude 'META-INF/*.SF'
+		exclude 'META-INF/*.DSA'
+		exclude 'META-INF/*.RSA'
+		exclude 'net/runelite/client/externalplugins/ExternalPluginManager.class'
+	}
+	from sourceSets.runelitePatch.output
+}
+
+tasks.register('run', JavaExec) {
+	group = 'runelite'
+	description = 'Run RuneLite with Real Loot Key Value loaded in developer mode.'
+	dependsOn tasks.named('patchedRuneliteClientJar')
+	classpath = files(
+		sourceSets.test.output,
+		sourceSets.main.output,
+		tasks.named('patchedRuneliteClientJar'),
+		configurations.testRuntimeClasspath.filter { file -> !isRuneLiteClientJar(file) }
+	)
+	mainClass.set('com.reallootkeyvalue.PluginTest')
+	args '--developer-mode', '--debug'
+}
+
+tasks.register('shadowJar', Jar) {
+	dependsOn configurations.testRuntimeClasspath
+	manifest {
+		attributes('Main-Class': 'com.reallootkeyvalue.PluginTest', 'Multi-Release': true)
+	}
+
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	from sourceSets.main.output
+	from sourceSets.test.output
+	from {
+		configurations.testRuntimeClasspath.collect { file ->
+			file.isDirectory() ? file : zipTree(file)
+		}
+	}
+
+	exclude 'META-INF/INDEX.LIST'
+	exclude 'META-INF/*.SF'
+	exclude 'META-INF/*.DSA'
+	exclude 'META-INF/*.RSA'
+	exclude '**/module-info.class'
+
+	group = BasePlugin.BUILD_GROUP
+	archiveClassifier.set('shadow')
+	archiveFileName.set("${rootProject.name}-${project.version}-all.jar")
+}

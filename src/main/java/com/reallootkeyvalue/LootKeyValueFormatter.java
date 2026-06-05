@@ -1,0 +1,42 @@
+package com.reallootkeyvalue;
+
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
+import java.util.Locale;
+
+final class LootKeyValueFormatter
+{
+	private static final NumberFormat INTEGER_FORMAT = NumberFormat.getIntegerInstance(Locale.ENGLISH);
+	private static final DecimalFormat ONE_DECIMAL_FORMAT = new DecimalFormat("#,###.#", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
+
+	private LootKeyValueFormatter()
+	{
+	}
+
+	static String formatOverlayValue(long value)
+	{
+		if (value < 100_000L)
+		{
+			return INTEGER_FORMAT.format(value);
+		}
+
+		if (value < 10_000_000L)
+		{
+			return (value / 1_000L) + "K";
+		}
+
+		if (value < 1_000_000_000L)
+		{
+			return formatOneDecimal(value, 1_000_000L) + "M";
+		}
+
+		return formatOneDecimal(value, 1_000_000_000L) + "B";
+	}
+
+	private static String formatOneDecimal(long value, long divisor)
+	{
+		final long floored = (value * 10L) / divisor;
+		return ONE_DECIMAL_FORMAT.format(floored / 10.0D);
+	}
+}
