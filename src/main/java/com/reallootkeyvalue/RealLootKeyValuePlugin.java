@@ -8,8 +8,6 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @PluginDescriptor(
 	name = "Real Loot Key Value",
@@ -18,7 +16,6 @@ import org.slf4j.LoggerFactory;
 )
 public class RealLootKeyValuePlugin extends Plugin
 {
-	private static final Logger log = LoggerFactory.getLogger(RealLootKeyValuePlugin.class);
 	@Inject
 	private OverlayManager overlayManager;
 

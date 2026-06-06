@@ -399,11 +399,11 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 		graphics.setFont(FontManager.getRunescapeFont());
 		final FontMetrics metrics = graphics.getFontMetrics();
 		final int firstTabX = bounds.x - (Math.max(0, keySlot) * KEY_SLOT_PITCH);
-		final int valueStartWidth = text.startsWith(BOTTOM_TEXT_PREFIX) ? metrics.stringWidth(BOTTOM_TEXT_PREFIX) : 0;
-		final String valueText = text.startsWith(BOTTOM_TEXT_PREFIX) ? text.substring(BOTTOM_TEXT_PREFIX.length()) : text;
-		final int valueTextWidth = metrics.stringWidth(valueText);
-		final int gpTextWidth = metrics.stringWidth(" gp") - 1;
-		final int textX = firstTabX + ((int) Math.round(KEY_SLOT_PITCH * 2) + gpTextWidth) - ((valueTextWidth/2));
+		final boolean hasPrefix = text.startsWith(BOTTOM_TEXT_PREFIX);
+		final int prefixWidth = hasPrefix ? metrics.stringWidth(BOTTOM_TEXT_PREFIX) : 0;
+		final String valueText = hasPrefix ? text.substring(BOTTOM_TEXT_PREFIX.length()) : text;
+		final int anchorX = firstTabX + ((int) Math.round(KEY_SLOT_PITCH * 2) + 5);
+		final int textX = anchorX - prefixWidth - (metrics.stringWidth(valueText) / 2);
 		final int textY = bounds.y + BOTTOM_TEXT_BASELINE_Y_OFFSET;
 
 		renderPlainText(graphics, text, textX, textY);
@@ -447,19 +447,6 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 	{
 		graphics.setColor(color);
 		graphics.drawString(text, x, y);
-	}
-
-	private Rectangle getTopLevelBounds(Widget widget)
-	{
-		Widget current = widget;
-		Widget parent = current.getParent();
-		while (parent != null)
-		{
-			current = parent;
-			parent = current.getParent();
-		}
-
-		return current.getBounds();
 	}
 
 	private Polygon createTabPatch(int x, int y, int width, int height)
