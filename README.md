@@ -15,3 +15,6 @@ The plugin is display-only. It does not change loot, add actions, click anything
 | Before | After |
 | ------------- | ------------- |
 | <img width="412" height="428" alt="Screenshot From 2026-06-05 17-22-20" src="https://github.com/user-attachments/assets/acae153c-61a9-4f5e-a7a2-1a059d318130" /> | <img width="412" height="428" alt="Screenshot From 2026-06-05 17-22-03" src="https://github.com/user-attachments/assets/2d312711-c859-4d85-ae80-dfd17c9f96e2" /> |
+| TODO: add default key icon and bottom text example | TODO: add default key icon and bottom text screenshot |
+| TODO: add compact tab value example | TODO: add compact tab value screenshot |
+| TODO: add top-right text example | TODO: add top-right text screenshot |
