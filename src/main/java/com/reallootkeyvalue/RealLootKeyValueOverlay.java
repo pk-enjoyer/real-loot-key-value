@@ -32,9 +32,12 @@ import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.overlay.WidgetItemOverlay;
 import net.runelite.client.ui.overlay.components.TextComponent;
 import net.runelite.client.util.ImageUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class RealLootKeyValueOverlay extends WidgetItemOverlay
 {
+	private static final Logger log = LoggerFactory.getLogger(RealLootKeyValueOverlay.class);
 	private static final BufferedImage LOOT_KEY_IMAGE = ImageUtil.loadImageResource(RealLootKeyValueOverlay.class, "/com/reallootkeyvalue/loot_key.png");
 	private static final BufferedImage LOOT_KEY_IMAGE_WITH_INNER_SHADOW = createInnerShadowImage(LOOT_KEY_IMAGE);
 	private static final BufferedImage LOOT_KEY_IMAGE_CAST_SHADOW = createCastShadowImage(LOOT_KEY_IMAGE);
@@ -81,6 +84,7 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 	private final List<KeyImageTile> pendingKeyImageTiles = new ArrayList<>();
 	private int selectedKeySlot = -1;
 	private boolean refreshSelectedKeySlotFromChest;
+	private int refreshSelectedKeySlotAttempts;
 
 	@Inject
 	RealLootKeyValueOverlay(Client client, ItemManager itemManager, LootKeyValueCalculator calculator, RealLootKeyValueConfig config)
@@ -96,14 +100,19 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 	{
 		if (calculator.isLootKeyItem(event.getItemId()) && event.getWidget() != null)
 		{
-			selectedKeySlot = getKeySlot(event.getWidget());
+			final int keySlot = getKeySlot(event.getWidget());
+			log.debug("RLKV selection menu click loot key itemId={} widgetIndex={} slot={}",
+				event.getItemId(), event.getWidget().getIndex(), keySlot);
+			selectKeySlot(keySlot);
 			return;
 		}
 
 		final int viewTab = parseViewTab(event.getMenuOption(), event.getMenuTarget());
 		if (viewTab >= 0)
 		{
-			selectedKeySlot = viewTab;
+			log.debug("RLKV selection menu click view tab option='{}' target='{}' slot={}",
+				event.getMenuOption(), event.getMenuTarget(), viewTab);
+			selectKeySlot(viewTab);
 		}
 	}
 
@@ -112,7 +121,8 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 		final int menuKeySlot = getKeySlot(event.getMenuEntries());
 		if (menuKeySlot >= 0)
 		{
-			selectedKeySlot = menuKeySlot;
+			log.debug("RLKV selection menu opened slot={}", menuKeySlot);
+			selectKeySlot(menuKeySlot);
 		}
 	}
 
@@ -123,18 +133,17 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 			return;
 		}
 
-		refreshSelectedKeySlotFromChest = true;
-		if (!hasSelectedKeySlotItems())
-		{
-			selectedKeySlot = getFirstPopulatedKeySlot();
-		}
+		log.debug("RLKV selection container changed containerId={} containerSlot={} selectedSlot={} selectedHasItems={}",
+			event.getContainerId(), calculator.keySlotForContainerId(event.getContainerId()), selectedKeySlot, hasSelectedKeySlotItems());
 	}
 
 	void onWidgetLoaded(WidgetLoaded event)
 	{
 		if (event.getGroupId() == InterfaceID.WILDY_LOOT_CHEST)
 		{
-			refreshSelectedKeySlotFromChest = true;
+			log.debug("RLKV selection widget loaded groupId={} selectedSlot={}", event.getGroupId(), selectedKeySlot);
+			selectKeySlot(-1);
+			requestSelectedKeySlotRefresh();
 		}
 	}
 
@@ -352,31 +361,56 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 			return;
 		}
 
+		log.debug("RLKV selection refresh from chest start selectedSlot={}", selectedKeySlot);
 		final int visibleKeySlot = getVisibleChestKeySlot();
 		if (visibleKeySlot >= 0)
 		{
-			selectedKeySlot = visibleKeySlot;
-			refreshSelectedKeySlotFromChest = false;
+			log.debug("RLKV selection refresh from chest resolved slot={}", visibleKeySlot);
+			selectKeySlot(visibleKeySlot);
 		}
+		else
+		{
+			refreshSelectedKeySlotAttempts--;
+			log.debug("RLKV selection refresh from chest unresolved selectedSlot={} attemptsLeft={}",
+				selectedKeySlot, refreshSelectedKeySlotAttempts);
+			if (refreshSelectedKeySlotAttempts <= 0)
+			{
+				refreshSelectedKeySlotFromChest = false;
+			}
+		}
+	}
+
+	private void requestSelectedKeySlotRefresh()
+	{
+		refreshSelectedKeySlotFromChest = true;
+		refreshSelectedKeySlotAttempts = 5;
+	}
+
+	private void selectKeySlot(int keySlot)
+	{
+		if (selectedKeySlot != keySlot)
+		{
+			log.debug("RLKV selection changed {} -> {}", selectedKeySlot, keySlot);
+		}
+		selectedKeySlot = keySlot;
+		refreshSelectedKeySlotFromChest = false;
+		refreshSelectedKeySlotAttempts = 0;
 	}
 
 	private int getVisibleChestKeySlot()
 	{
-		final int selectedTabKeySlot = getSelectedTabKeySlot();
-		if (selectedTabKeySlot >= 0)
-		{
-			return selectedTabKeySlot;
-		}
-
 		final Widget itemsWidget = client.getWidget(InterfaceID.WildyLootChest.ITEMS);
 		if (itemsWidget == null || itemsWidget.isHidden())
 		{
+			log.debug("RLKV selection visible chest no visible items widget widgetNull={} hidden={}",
+				itemsWidget == null, itemsWidget != null && itemsWidget.isHidden());
 			return -1;
 		}
 
 		final Map<Integer, Integer> visibleItems = getWidgetItems(itemsWidget);
 		if (visibleItems.isEmpty())
 		{
+			log.debug("RLKV selection visible chest item widget empty");
 			return -1;
 		}
 
@@ -400,6 +434,7 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 				continue;
 			}
 
+			log.debug("RLKV selection visible items match slot={} selectedSlot={}", slot, selectedKeySlot);
 			if (slot == selectedKeySlot)
 			{
 				return slot;
@@ -409,55 +444,9 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 			matchingSlotCount++;
 		}
 
+		log.debug("RLKV selection visible item matches count={} returnedSlot={}", matchingSlotCount,
+			matchingSlotCount == 1 ? matchingSlot : -1);
 		return matchingSlotCount == 1 ? matchingSlot : -1;
-	}
-
-	private int getSelectedTabKeySlot()
-	{
-		final Widget tabsWidget = client.getWidget(InterfaceID.WildyLootChest.TABS);
-		if (tabsWidget == null || tabsWidget.isHidden())
-		{
-			return -1;
-		}
-
-		final Widget[] tabWidgets = getWidgetChildren(tabsWidget);
-		if (tabWidgets == null)
-		{
-			return -1;
-		}
-
-		for (int slot = 0; slot < Math.min(5, tabWidgets.length); slot++)
-		{
-			final Widget tabWidget = tabWidgets[slot];
-			if (tabWidget == null || tabWidget.getOnOpListener() != null)
-			{
-				continue;
-			}
-
-			if (calculator.hasItems(client.getItemContainer(calculator.containerIdForKeySlot(slot))))
-			{
-				return slot;
-			}
-		}
-
-		return -1;
-	}
-
-	private Widget[] getWidgetChildren(Widget widget)
-	{
-		Widget[] children = widget.getDynamicChildren();
-		if (children != null && children.length > 0)
-		{
-			return children;
-		}
-
-		children = widget.getStaticChildren();
-		if (children != null && children.length > 0)
-		{
-			return children;
-		}
-
-		return widget.getChildren();
 	}
 
 	private Map<Integer, Integer> getWidgetItems(Widget widget)
@@ -550,8 +539,7 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 
 	private int parseViewTabSlot(String value)
 	{
-		final int tabNumber = parseIntOrNegativeOne(value);
-		return tabNumber > 0 ? tabNumber - 1 : -1;
+		return parseIntOrNegativeOne(value);
 	}
 
 	private int parseIntOrNegativeOne(String value)
