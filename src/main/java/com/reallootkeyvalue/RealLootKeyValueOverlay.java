@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
-import java.awt.Point;
 import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.Shape;
@@ -30,14 +29,10 @@ import net.runelite.api.widgets.WidgetItem;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.overlay.WidgetItemOverlay;
-import net.runelite.client.ui.overlay.components.TextComponent;
 import net.runelite.client.util.ImageUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 class RealLootKeyValueOverlay extends WidgetItemOverlay
 {
-	private static final Logger log = LoggerFactory.getLogger(RealLootKeyValueOverlay.class);
 	private static final BufferedImage LOOT_KEY_IMAGE = ImageUtil.loadImageResource(RealLootKeyValueOverlay.class, "/com/reallootkeyvalue/loot_key.png");
 	private static final BufferedImage LOOT_KEY_IMAGE_WITH_INNER_SHADOW = createInnerShadowImage(LOOT_KEY_IMAGE);
 	private static final BufferedImage LOOT_KEY_IMAGE_CAST_SHADOW = createCastShadowImage(LOOT_KEY_IMAGE);
@@ -82,7 +77,9 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 	private String pendingTopRightText;
 	private Color pendingTopRightTextColor;
 	private final List<KeyImageTile> pendingKeyImageTiles = new ArrayList<>();
+	private final Map<TabPatchKey, BufferedImage> tabPatchImages = new HashMap<>();
 	private int selectedKeySlot = -1;
+	private int hoveredKeySlot = -1;
 	private boolean refreshSelectedKeySlotFromChest;
 	private int refreshSelectedKeySlotAttempts;
 
@@ -100,18 +97,13 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 	{
 		if (calculator.isLootKeyItem(event.getItemId()) && event.getWidget() != null)
 		{
-			final int keySlot = getKeySlot(event.getWidget());
-			log.debug("RLKV selection menu click loot key itemId={} widgetIndex={} slot={}",
-				event.getItemId(), event.getWidget().getIndex(), keySlot);
-			selectKeySlot(keySlot);
+			selectKeySlot(getKeySlot(event.getWidget()));
 			return;
 		}
 
 		final int viewTab = parseViewTab(event.getMenuOption(), event.getMenuTarget());
 		if (viewTab >= 0)
 		{
-			log.debug("RLKV selection menu click view tab option='{}' target='{}' slot={}",
-				event.getMenuOption(), event.getMenuTarget(), viewTab);
 			selectKeySlot(viewTab);
 		}
 	}
@@ -121,7 +113,6 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 		final int menuKeySlot = getKeySlot(event.getMenuEntries());
 		if (menuKeySlot >= 0)
 		{
-			log.debug("RLKV selection menu opened slot={}", menuKeySlot);
 			selectKeySlot(menuKeySlot);
 		}
 	}
@@ -132,16 +123,12 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 		{
 			return;
 		}
-
-		log.debug("RLKV selection container changed containerId={} containerSlot={} selectedSlot={} selectedHasItems={}",
-			event.getContainerId(), calculator.keySlotForContainerId(event.getContainerId()), selectedKeySlot, hasSelectedKeySlotItems());
 	}
 
 	void onWidgetLoaded(WidgetLoaded event)
 	{
 		if (event.getGroupId() == InterfaceID.WILDY_LOOT_CHEST)
 		{
-			log.debug("RLKV selection widget loaded groupId={} selectedSlot={}", event.getGroupId(), selectedKeySlot);
 			selectKeySlot(-1);
 			requestSelectedKeySlotRefresh();
 		}
@@ -151,6 +138,7 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 	public Dimension render(Graphics2D graphics)
 	{
 		refreshSelectedKeySlotFromChest();
+		hoveredKeySlot = getHoveredKeySlot();
 
 		pendingBottomTextBounds = null;
 		pendingBottomTextKeySlot = -1;
@@ -361,18 +349,14 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 			return;
 		}
 
-		log.debug("RLKV selection refresh from chest start selectedSlot={}", selectedKeySlot);
 		final int visibleKeySlot = getVisibleChestKeySlot();
 		if (visibleKeySlot >= 0)
 		{
-			log.debug("RLKV selection refresh from chest resolved slot={}", visibleKeySlot);
 			selectKeySlot(visibleKeySlot);
 		}
 		else
 		{
 			refreshSelectedKeySlotAttempts--;
-			log.debug("RLKV selection refresh from chest unresolved selectedSlot={} attemptsLeft={}",
-				selectedKeySlot, refreshSelectedKeySlotAttempts);
 			if (refreshSelectedKeySlotAttempts <= 0)
 			{
 				refreshSelectedKeySlotFromChest = false;
@@ -388,10 +372,6 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 
 	private void selectKeySlot(int keySlot)
 	{
-		if (selectedKeySlot != keySlot)
-		{
-			log.debug("RLKV selection changed {} -> {}", selectedKeySlot, keySlot);
-		}
 		selectedKeySlot = keySlot;
 		refreshSelectedKeySlotFromChest = false;
 		refreshSelectedKeySlotAttempts = 0;
@@ -402,15 +382,12 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 		final Widget itemsWidget = client.getWidget(InterfaceID.WildyLootChest.ITEMS);
 		if (itemsWidget == null || itemsWidget.isHidden())
 		{
-			log.debug("RLKV selection visible chest no visible items widget widgetNull={} hidden={}",
-				itemsWidget == null, itemsWidget != null && itemsWidget.isHidden());
 			return -1;
 		}
 
 		final Map<Integer, Integer> visibleItems = getWidgetItems(itemsWidget);
 		if (visibleItems.isEmpty())
 		{
-			log.debug("RLKV selection visible chest item widget empty");
 			return -1;
 		}
 
@@ -434,7 +411,6 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 				continue;
 			}
 
-			log.debug("RLKV selection visible items match slot={} selectedSlot={}", slot, selectedKeySlot);
 			if (slot == selectedKeySlot)
 			{
 				return slot;
@@ -444,8 +420,6 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 			matchingSlotCount++;
 		}
 
-		log.debug("RLKV selection visible item matches count={} returnedSlot={}", matchingSlotCount,
-			matchingSlotCount == 1 ? matchingSlot : -1);
 		return matchingSlotCount == 1 ? matchingSlot : -1;
 	}
 
@@ -510,7 +484,7 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 
 	private boolean isTabHovered(int keySlot)
 	{
-		return keySlot >= 0 && getHoveredKeySlot() == keySlot;
+		return keySlot >= 0 && hoveredKeySlot == keySlot;
 	}
 
 	private boolean isTabActive(int keySlot)
@@ -577,12 +551,7 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 		fillTabPatch(graphics, patchX, patchY, patchWidth, patchHeight, hovered, active);
 		graphics.drawImage(LOOT_KEY_IMAGE_CAST_SHADOW, iconX + ICON_CAST_SHADOW_X_OFFSET, iconY + ICON_CAST_SHADOW_Y_OFFSET, null);
 		graphics.drawImage(LOOT_KEY_IMAGE_WITH_INNER_SHADOW, iconX, iconY, null);
-
-		final TextComponent textComponent = new TextComponent();
-		textComponent.setPosition(new Point(textX, textBaselineY));
-		textComponent.setText(text);
-		textComponent.setColor(textColor);
-		textComponent.render(graphics);
+		renderPlainText(graphics, text, textX, textBaselineY, textColor);
 	}
 
 	private void renderKeyImageTile(Graphics2D graphics, Rectangle itemBounds, boolean hovered, boolean active)
@@ -669,31 +638,52 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 
 	private void fillTabPatch(Graphics2D graphics, int x, int y, int width, int height, boolean hovered, boolean active)
 	{
-		final Polygon patch = createTabPatch(x, y, width, height);
-		if (hovered || active)
+		graphics.drawImage(getTabPatchImage(width, height, hovered || active), x, y, null);
+	}
+
+	private BufferedImage getTabPatchImage(int width, int height, boolean highlighted)
+	{
+		final TabPatchKey key = new TabPatchKey(width, height, highlighted);
+		BufferedImage image = tabPatchImages.get(key);
+		if (image == null)
+		{
+			image = createTabPatchImage(width, height, highlighted);
+			tabPatchImages.put(key, image);
+		}
+
+		return image;
+	}
+
+	private BufferedImage createTabPatchImage(int width, int height, boolean highlighted)
+	{
+		final BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		final Graphics2D graphics = image.createGraphics();
+		final Polygon patch = createTabPatch(0, 0, width, height);
+		if (highlighted)
 		{
 			graphics.setColor(HOVER_BACKGROUND);
 			graphics.fillPolygon(patch);
-			return;
+			graphics.dispose();
+			return image;
 		}
 
-		final Shape originalClip = graphics.getClip();
-		graphics.clip(patch);
+		graphics.setClip(patch);
 
-		final int fadeStartY = y + ((height * 3) / 5);
-		final int fadeHeight = Math.max(1, (y + height) - fadeStartY);
+		final int fadeStartY = (height * 3) / 5;
+		final int fadeHeight = Math.max(1, height - fadeStartY);
 		graphics.setColor(KEY_TAB_GRADIENT_TOP);
-		graphics.fillRect(x, y, width, fadeStartY - y);
+		graphics.fillRect(0, 0, width, fadeStartY);
 
 		for (int step = 0; step < 5; step++)
 		{
 			final int bandY = fadeStartY + ((fadeHeight * step) / 5);
 			final int nextBandY = fadeStartY + ((fadeHeight * (step + 1)) / 5);
 			graphics.setColor(lerp(KEY_TAB_GRADIENT_TOP, KEY_TAB_GRADIENT_BOTTOM, step + 1, 5));
-			graphics.fillRect(x, bandY, width, Math.max(1, nextBandY - bandY));
+			graphics.fillRect(0, bandY, width, Math.max(1, nextBandY - bandY));
 		}
 
-		graphics.setClip(originalClip);
+		graphics.dispose();
+		return image;
 	}
 
 	private Color lerp(Color from, Color to, int step, int steps)
@@ -820,6 +810,46 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 		{
 			this.bounds = bounds;
 			this.keySlot = keySlot;
+		}
+	}
+
+	private static final class TabPatchKey
+	{
+		private final int width;
+		private final int height;
+		private final boolean highlighted;
+
+		private TabPatchKey(int width, int height, boolean highlighted)
+		{
+			this.width = width;
+			this.height = height;
+			this.highlighted = highlighted;
+		}
+
+		@Override
+		public boolean equals(Object other)
+		{
+			if (this == other)
+			{
+				return true;
+			}
+
+			if (!(other instanceof TabPatchKey))
+			{
+				return false;
+			}
+
+			final TabPatchKey key = (TabPatchKey) other;
+			return width == key.width && height == key.height && highlighted == key.highlighted;
+		}
+
+		@Override
+		public int hashCode()
+		{
+			int result = width;
+			result = (31 * result) + height;
+			result = (31 * result) + (highlighted ? 1 : 0);
+			return result;
 		}
 	}
 }
