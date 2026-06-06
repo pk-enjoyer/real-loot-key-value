@@ -57,11 +57,12 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 	private final ItemManager itemManager;
 	private final LootKeyValueCalculator calculator;
 	private final RealLootKeyValueConfig config;
-	private Rectangle pendingValueTextBounds;
-	private int pendingValueTextKeySlot;
-	private String pendingValueText;
-	private ValueDisplayMode pendingValueTextMode;
-	private Color pendingValueTextColor;
+	private Rectangle pendingBottomTextBounds;
+	private int pendingBottomTextKeySlot;
+	private String pendingBottomText;
+	private Rectangle pendingTopRightTextBounds;
+	private String pendingTopRightText;
+	private Color pendingTopRightTextColor;
 	private int selectedKeySlot = -1;
 
 	@Inject
@@ -92,26 +93,25 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		pendingValueTextBounds = null;
-		pendingValueTextKeySlot = -1;
-		pendingValueText = null;
-		pendingValueTextMode = null;
-		pendingValueTextColor = TEXT_COLOR;
+		pendingBottomTextBounds = null;
+		pendingBottomTextKeySlot = -1;
+		pendingBottomText = null;
+		pendingTopRightTextBounds = null;
+		pendingTopRightText = null;
+		pendingTopRightTextColor = TEXT_COLOR;
 
 		final Shape originalClip = graphics.getClip();
 		final Dimension dimension = super.render(graphics);
 		graphics.setClip(originalClip);
 
-		if (pendingValueTextBounds != null && pendingValueText != null)
+		if (pendingBottomTextBounds != null && pendingBottomText != null)
 		{
-			if (pendingValueTextMode == ValueDisplayMode.TOP_RIGHT_TEXT)
-			{
-				renderTopRightText(graphics, pendingValueTextBounds, pendingValueTextKeySlot, pendingValueText, pendingValueTextColor);
-			}
-			else
-			{
-				renderBottomText(graphics, pendingValueTextBounds, pendingValueTextKeySlot, pendingValueText);
-			}
+			renderBottomText(graphics, pendingBottomTextBounds, pendingBottomTextKeySlot, pendingBottomText);
+		}
+
+		if (pendingTopRightTextBounds != null && pendingTopRightText != null)
+		{
+			renderTopRightText(graphics, pendingTopRightTextBounds, pendingTopRightText, pendingTopRightTextColor);
 		}
 
 		return dimension;
@@ -139,29 +139,25 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 		}
 
 		final long value = calculator.calculateGeValue(container, itemManager::getItemPrice);
-		final ValueDisplayMode displayMode = config.valueDisplayMode();
 		final Color valueTextColor = getValueTextColor(value);
-		if (displayMode == ValueDisplayMode.COMPACT_KEY_TAB || displayMode == ValueDisplayMode.BOTH)
+		if (config.showCompactKeyTabValue())
 		{
 			final String text = LootKeyValueFormatter.formatOverlayValue(value);
 			renderReplacementTile(graphics, widgetItem.getCanvasBounds(), text, valueTextColor, isTabHovered(keySlot));
 		}
-
-		if (displayMode == ValueDisplayMode.KEY_TAB_AND_BOTTOM_TEXT)
+		else if (config.showKeyTabIcon())
 		{
 			renderKeyImageTile(graphics, widgetItem.getCanvasBounds(), isTabHovered(keySlot));
 		}
 
-		if (shouldRenderValueText(displayMode, keySlot))
+		if (config.showBottomText() && shouldRenderValueTextForKey(keySlot))
 		{
-			if (displayMode == ValueDisplayMode.TOP_RIGHT_TEXT)
-			{
-				queueValueText(widgetItem, displayMode, keySlot, LootKeyValueFormatter.formatGpAmount(value), valueTextColor);
-			}
-			else
-			{
-				queueValueText(widgetItem, displayMode, keySlot, LootKeyValueFormatter.formatChestValue(value), TEXT_COLOR);
-			}
+			queueBottomText(widgetItem, keySlot, LootKeyValueFormatter.formatChestValue(value));
+		}
+
+		if (config.showTopRightText() && shouldRenderValueTextForKey(keySlot))
+		{
+			queueTopRightText(widgetItem, keySlot, LootKeyValueFormatter.formatGpAmount(value), valueTextColor);
 		}
 	}
 
@@ -170,22 +166,22 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 		return config.highlightHighValueText() && value >= HIGH_VALUE_TEXT_THRESHOLD ? HIGH_VALUE_TEXT_COLOR : TEXT_COLOR;
 	}
 
-	private void queueValueText(WidgetItem widgetItem, ValueDisplayMode displayMode, int keySlot, String text, Color textColor)
+	private void queueBottomText(WidgetItem widgetItem, int keySlot, String text)
 	{
-		pendingValueTextBounds = getNormalizedBounds(widgetItem.getCanvasBounds(), displayMode, keySlot);
-		pendingValueTextKeySlot = keySlot;
-		pendingValueText = text;
-		pendingValueTextMode = displayMode;
-		pendingValueTextColor = textColor;
+		pendingBottomTextBounds = widgetItem.getCanvasBounds();
+		pendingBottomTextKeySlot = keySlot;
+		pendingBottomText = text;
 	}
 
-	private Rectangle getNormalizedBounds(Rectangle bounds, ValueDisplayMode displayMode, int keySlot)
+	private void queueTopRightText(WidgetItem widgetItem, int keySlot, String text, Color textColor)
 	{
-		if (displayMode != ValueDisplayMode.TOP_RIGHT_TEXT)
-		{
-			return bounds;
-		}
+		pendingTopRightTextBounds = getTopRightNormalizedBounds(widgetItem.getCanvasBounds(), keySlot);
+		pendingTopRightText = text;
+		pendingTopRightTextColor = textColor;
+	}
 
+	private Rectangle getTopRightNormalizedBounds(Rectangle bounds, int keySlot)
+	{
 		return new Rectangle(
 			bounds.x - (Math.max(0, keySlot) * KEY_SLOT_PITCH),
 			bounds.y,
@@ -209,38 +205,6 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 		}
 
 		return widget.getIndex();
-	}
-
-	private boolean shouldRenderValueText(ValueDisplayMode displayMode, int keySlot)
-	{
-		if (displayMode == ValueDisplayMode.TOP_RIGHT_TEXT)
-		{
-			return shouldRenderSelectedValueTextForKey(keySlot);
-		}
-
-		if (displayMode != ValueDisplayMode.BOTTOM_TEXT &&
-			displayMode != ValueDisplayMode.BOTH &&
-			displayMode != ValueDisplayMode.KEY_TAB_AND_BOTTOM_TEXT)
-		{
-			return false;
-		}
-
-		return shouldRenderValueTextForKey(keySlot);
-	}
-
-	private boolean shouldRenderSelectedValueTextForKey(int keySlot)
-	{
-		if (keySlot < 0)
-		{
-			return false;
-		}
-
-		if (selectedKeySlot >= 0 && calculator.hasItems(client.getItemContainer(calculator.containerIdForKeySlot(selectedKeySlot))))
-		{
-			return keySlot == selectedKeySlot;
-		}
-
-		return keySlot == getFirstPopulatedKeySlot();
 	}
 
 	private boolean shouldRenderValueTextForKey(int keySlot)
@@ -415,7 +379,7 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 		renderPlainText(graphics, text, textX, textY);
 	}
 
-	private void renderTopRightText(Graphics2D graphics, Rectangle bounds, int keySlot, String amountText, Color amountColor)
+	private void renderTopRightText(Graphics2D graphics, Rectangle bounds, String amountText, Color amountColor)
 	{
 		graphics.setFont(FontManager.getRunescapeSmallFont());
 		final FontMetrics labelMetrics = graphics.getFontMetrics();
