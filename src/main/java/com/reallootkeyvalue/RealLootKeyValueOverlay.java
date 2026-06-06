@@ -50,7 +50,7 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 	private static final int PATCH_X_OFFSET = 0;
 	private static final int PATCH_Y_OFFSET = -1;
 	private static final int PATCH_MIN_WIDTH = 35;
-	private static final int ICON_X_OFFSET = -8;
+	private static final int ICON_X_OFFSET = -1;
 	private static final int ICON_Y_OFFSET = 1;
 	private static final int ICON_CAST_SHADOW_X_OFFSET = 1;
 	private static final int ICON_CAST_SHADOW_Y_OFFSET = 0;
@@ -557,7 +557,7 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 		final int patchWidth = Math.max(PATCH_MIN_WIDTH, textWidth + (PATCH_PADDING_X * 2));
 		final int patchX = itemBounds.x + PATCH_X_OFFSET;
 		final int patchY = itemBounds.y + PATCH_Y_OFFSET;
-		final int iconX = patchX + ((patchWidth - LOOT_KEY_IMAGE_WITH_INNER_SHADOW.getWidth()) / 2);
+		final int iconX = patchX + ((patchWidth - LOOT_KEY_IMAGE_WITH_INNER_SHADOW.getWidth()) / 2) + ICON_X_OFFSET;
 		final int iconY = itemBounds.y + ICON_Y_OFFSET;
 		final int textX = patchX + ((patchWidth - textWidth) / 2);
 		final int textBaselineY = itemBounds.y + TEXT_Y_OFFSET;
