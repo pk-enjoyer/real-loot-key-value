@@ -8,19 +8,54 @@ import net.runelite.client.config.ConfigItem;
 public interface RealLootKeyValueConfig extends Config
 {
 	@ConfigItem(
-		keyName = "valueDisplayMode",
-		name = "Value display",
-		description = "Configures where the real Grand Exchange value is displayed in the loot key chest."
+		keyName = "showCompactKeyTabValue",
+		name = "Compact key tab value",
+		description = "Shows the real Grand Exchange value directly on the loot key tab.",
+		position = 0
 	)
-	default ValueDisplayMode valueDisplayMode()
+	default boolean showCompactKeyTabValue()
 	{
-		return ValueDisplayMode.COMPACT_KEY_TAB;
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "showKeyTabIcon",
+		name = "Key tab icon",
+		description = "Shows the loot key icon on the key tab when the compact key tab value is disabled.",
+		position = 1
+	)
+	default boolean showKeyTabIcon()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showBottomText",
+		name = "Bottom text",
+		description = "Shows the real Grand Exchange value at the bottom of the loot key chest.",
+		position = 2
+	)
+	default boolean showBottomText()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showTopRightText",
+		name = "Top right text",
+		description = "Shows the real Grand Exchange value in the top-right corner of the loot key chest.",
+		position = 3
+	)
+	default boolean showTopRightText()
+	{
+		return false;
 	}
 
 	@ConfigItem(
 		keyName = "highlightHighValueText",
 		name = "Highlight high values",
-		description = "Colors values of 10m gp or more green."
+		description = "Colors values of 10m gp or more green.",
+		position = 4
 	)
 	default boolean highlightHighValueText()
 	{
