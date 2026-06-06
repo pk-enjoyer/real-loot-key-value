@@ -2,7 +2,10 @@ package com.reallootkeyvalue;
 
 import com.google.inject.Provides;
 import javax.inject.Inject;
+import net.runelite.api.events.ItemContainerChanged;
+import net.runelite.api.events.MenuOpened;
 import net.runelite.api.events.MenuOptionClicked;
+import net.runelite.api.events.WidgetLoaded;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
@@ -32,6 +35,24 @@ public class RealLootKeyValuePlugin extends Plugin
 	protected void shutDown()
 	{
 		overlayManager.remove(overlay);
+	}
+
+	@Subscribe
+	public void onWidgetLoaded(WidgetLoaded event)
+	{
+		overlay.onWidgetLoaded(event);
+	}
+
+	@Subscribe
+	public void onItemContainerChanged(ItemContainerChanged event)
+	{
+		overlay.onItemContainerChanged(event);
+	}
+
+	@Subscribe
+	public void onMenuOpened(MenuOpened event)
+	{
+		overlay.onMenuOpened(event);
 	}
 
 	@Subscribe
