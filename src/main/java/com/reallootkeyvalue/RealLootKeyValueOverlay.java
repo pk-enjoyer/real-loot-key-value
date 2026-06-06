@@ -380,19 +380,36 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 			return -1;
 		}
 
+		return getUniqueMatchingKeySlot(visibleItems);
+	}
+
+	private int getUniqueMatchingKeySlot(Map<Integer, Integer> visibleItems)
+	{
+		int matchingSlot = -1;
+		int matchingSlotCount = 0;
 		for (int slot = 0; ; slot++)
 		{
 			final int containerId = calculator.containerIdForKeySlot(slot);
 			if (containerId < 0)
 			{
-				return -1;
+				break;
 			}
 
-			if (visibleItems.equals(getContainerItems(client.getItemContainer(containerId))))
+			if (!visibleItems.equals(getContainerItems(client.getItemContainer(containerId))))
+			{
+				continue;
+			}
+
+			if (slot == selectedKeySlot)
 			{
 				return slot;
 			}
+
+			matchingSlot = slot;
+			matchingSlotCount++;
 		}
+
+		return matchingSlotCount == 1 ? matchingSlot : -1;
 	}
 
 	private int getSelectedTabKeySlot()
@@ -518,7 +535,7 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 		final String cleanTarget = stripTags(target).trim();
 		if ("View tab".equalsIgnoreCase(cleanOption))
 		{
-			return parseIntOrNegativeOne(cleanTarget);
+			return parseViewTabSlot(cleanTarget);
 		}
 
 		final String menuText = cleanOption + " " + cleanTarget;
@@ -528,7 +545,13 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 			return -1;
 		}
 
-		return parseIntOrNegativeOne(matcher.group(1));
+		return parseViewTabSlot(matcher.group(1));
+	}
+
+	private int parseViewTabSlot(String value)
+	{
+		final int tabNumber = parseIntOrNegativeOne(value);
+		return tabNumber > 0 ? tabNumber - 1 : -1;
 	}
 
 	private int parseIntOrNegativeOne(String value)
