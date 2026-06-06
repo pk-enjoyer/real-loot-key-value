@@ -33,7 +33,8 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 	private static final Color PATCH_BORDER = new Color(38, 32, 25);
 	private static final Color PATCH_BORDER_SHADOW = new Color(20, 17, 13);
 	private static final Color TEXT_COLOR = new Color(255, 255, 255);
-	private static final Color MILLION_VALUE_TEXT_COLOR = new Color(13, 196, 102);
+	private static final Color HIGH_VALUE_TEXT_COLOR = new Color(13, 196, 102);
+	private static final long HIGH_VALUE_TEXT_THRESHOLD = 10_000_000L;
 	private static final int PATCH_X_OFFSET = 0;
 	private static final int PATCH_Y_OFFSET = -1;
 	private static final int PATCH_MIN_WIDTH = 35;
@@ -139,10 +140,11 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 
 		final long value = calculator.calculateGeValue(container, itemManager::getItemPrice);
 		final ValueDisplayMode displayMode = config.valueDisplayMode();
+		final Color valueTextColor = getValueTextColor(value);
 		if (displayMode == ValueDisplayMode.COMPACT_KEY_TAB || displayMode == ValueDisplayMode.BOTH)
 		{
 			final String text = LootKeyValueFormatter.formatOverlayValue(value);
-			renderReplacementTile(graphics, widgetItem.getCanvasBounds(), text, isTabHovered(keySlot));
+			renderReplacementTile(graphics, widgetItem.getCanvasBounds(), text, valueTextColor, isTabHovered(keySlot));
 		}
 
 		if (displayMode == ValueDisplayMode.KEY_TAB_AND_BOTTOM_TEXT)
@@ -154,13 +156,18 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 		{
 			if (displayMode == ValueDisplayMode.TOP_RIGHT_TEXT)
 			{
-				queueValueText(widgetItem, displayMode, keySlot, LootKeyValueFormatter.formatGpAmount(value), value >= 10_000_000L ? MILLION_VALUE_TEXT_COLOR : TEXT_COLOR);
+				queueValueText(widgetItem, displayMode, keySlot, LootKeyValueFormatter.formatGpAmount(value), valueTextColor);
 			}
 			else
 			{
 				queueValueText(widgetItem, displayMode, keySlot, LootKeyValueFormatter.formatChestValue(value), TEXT_COLOR);
 			}
 		}
+	}
+
+	private Color getValueTextColor(long value)
+	{
+		return config.highlightHighValueText() && value >= HIGH_VALUE_TEXT_THRESHOLD ? HIGH_VALUE_TEXT_COLOR : TEXT_COLOR;
 	}
 
 	private void queueValueText(WidgetItem widgetItem, ValueDisplayMode displayMode, int keySlot, String text, Color textColor)
@@ -354,7 +361,7 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 		return value == null ? "" : value.replaceAll("<[^>]*>", "");
 	}
 
-	private void renderReplacementTile(Graphics2D graphics, Rectangle itemBounds, String text, boolean hovered)
+	private void renderReplacementTile(Graphics2D graphics, Rectangle itemBounds, String text, Color textColor, boolean hovered)
 	{
 		graphics.setFont(FontManager.getRunescapeSmallFont());
 
@@ -376,7 +383,7 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 		final TextComponent textComponent = new TextComponent();
 		textComponent.setPosition(new Point(textX, textBaselineY));
 		textComponent.setText(text);
-		textComponent.setColor(TEXT_COLOR);
+		textComponent.setColor(textColor);
 		textComponent.setOutline(true);
 		textComponent.render(graphics);
 	}
@@ -399,11 +406,10 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 		graphics.setFont(FontManager.getRunescapeFont());
 		final FontMetrics metrics = graphics.getFontMetrics();
 		final int firstTabX = bounds.x - (Math.max(0, keySlot) * KEY_SLOT_PITCH);
-		final boolean hasPrefix = text.startsWith(BOTTOM_TEXT_PREFIX);
-		final int prefixWidth = hasPrefix ? metrics.stringWidth(BOTTOM_TEXT_PREFIX) : 0;
-		final String valueText = hasPrefix ? text.substring(BOTTOM_TEXT_PREFIX.length()) : text;
-		final int anchorX = firstTabX + ((int) Math.round(KEY_SLOT_PITCH * 2) + 5);
-		final int textX = anchorX - prefixWidth - (metrics.stringWidth(valueText) / 2);
+		final String valueText = text.startsWith(BOTTOM_TEXT_PREFIX) ? text.substring(BOTTOM_TEXT_PREFIX.length()) : text;
+		final int valueTextWidth = metrics.stringWidth(valueText);
+		final int gpTextWidth = metrics.stringWidth(" gp") - 1;
+		final int textX = firstTabX + ((int) Math.round(KEY_SLOT_PITCH * 2) + gpTextWidth) - ((valueTextWidth/2));
 		final int textY = bounds.y + BOTTOM_TEXT_BASELINE_Y_OFFSET;
 
 		renderPlainText(graphics, text, textX, textY);

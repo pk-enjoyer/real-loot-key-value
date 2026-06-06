@@ -16,4 +16,14 @@ public interface RealLootKeyValueConfig extends Config
 	{
 		return ValueDisplayMode.COMPACT_KEY_TAB;
 	}
+
+	@ConfigItem(
+		keyName = "highlightHighValueText",
+		name = "Highlight high values",
+		description = "Colors values of 10m gp or more green."
+	)
+	default boolean highlightHighValueText()
+	{
+		return true;
+	}
 }
