@@ -30,4 +30,21 @@ public class LootKeyValueFormatterTest
 		assertEquals("1B", LootKeyValueFormatter.formatOverlayValue(1_000_000_000));
 		assertEquals("2.1B", LootKeyValueFormatter.formatOverlayValue(2_147_483_647));
 	}
+
+	@Test
+	public void formatsChestValueWithFullGpAmount()
+	{
+		assertEquals("Value in chest: 11,235,717 gp", LootKeyValueFormatter.formatChestValue(11_235_717));
+	}
+
+	@Test
+	public void formatsGpAmountOnly()
+	{
+		assertEquals("99,999 gp", LootKeyValueFormatter.formatGpAmount(99_999));
+		assertEquals("213,123 gp", LootKeyValueFormatter.formatGpAmount(213_123));
+		assertEquals("999,999 gp", LootKeyValueFormatter.formatGpAmount(999_999));
+		assertEquals("1,234k", LootKeyValueFormatter.formatGpAmount(1_234_567));
+		assertEquals("9,213k", LootKeyValueFormatter.formatGpAmount(9_213_123));
+		assertEquals("11.2m", LootKeyValueFormatter.formatGpAmount(11_235_717));
+	}
 }
