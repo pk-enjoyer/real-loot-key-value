@@ -23,15 +23,15 @@ final class LootKeyValueFormatter
 
 		if (value < 10_000_000L)
 		{
-			return (value / 1_000L) + "K";
+			return (value / 1_000L) + "k";
 		}
 
 		if (value < 1_000_000_000L)
 		{
-			return formatOneDecimal(value, 1_000_000L) + "M";
+			return formatOneDecimal(value, 1_000_000L) + "m";
 		}
 
-		return formatOneDecimal(value, 1_000_000_000L) + "B";
+		return formatOneDecimal(value, 1_000_000_000L) + "b";
 	}
 
 	static String formatChestValue(long value)

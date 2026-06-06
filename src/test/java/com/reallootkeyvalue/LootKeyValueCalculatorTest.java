@@ -45,10 +45,21 @@ public class LootKeyValueCalculatorTest
 	}
 
 	@Test
+	public void mapsLootKeyContainersToMatchingSlots()
+	{
+		assertEquals(0, calculator.keySlotForContainerId(InventoryID.DEADMAN_LOOT_INV0));
+		assertEquals(1, calculator.keySlotForContainerId(InventoryID.DEADMAN_LOOT_INV1));
+		assertEquals(2, calculator.keySlotForContainerId(InventoryID.DEADMAN_LOOT_INV2));
+		assertEquals(3, calculator.keySlotForContainerId(InventoryID.DEADMAN_LOOT_INV3));
+		assertEquals(4, calculator.keySlotForContainerId(InventoryID.DEADMAN_LOOT_INV4));
+	}
+
+	@Test
 	public void returnsNegativeContainerForInvalidLootKeySlots()
 	{
 		assertEquals(-1, calculator.containerIdForKeySlot(-1));
 		assertEquals(-1, calculator.containerIdForKeySlot(5));
+		assertEquals(-1, calculator.keySlotForContainerId(InventoryID.INV));
 	}
 
 	@Test

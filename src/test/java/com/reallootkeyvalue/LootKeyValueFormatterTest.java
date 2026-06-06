@@ -17,18 +17,18 @@ public class LootKeyValueFormatterTest
 	@Test
 	public void formatsThousandsAsFlooredK()
 	{
-		assertEquals("100K", LootKeyValueFormatter.formatOverlayValue(100_000));
-		assertEquals("1229K", LootKeyValueFormatter.formatOverlayValue(1_229_000));
-		assertEquals("9999K", LootKeyValueFormatter.formatOverlayValue(9_999_999));
+		assertEquals("100k", LootKeyValueFormatter.formatOverlayValue(100_000));
+		assertEquals("1229k", LootKeyValueFormatter.formatOverlayValue(1_229_000));
+		assertEquals("9999k", LootKeyValueFormatter.formatOverlayValue(9_999_999));
 	}
 
 	@Test
 	public void formatsMillionsAndBillionsCompactly()
 	{
-		assertEquals("10M", LootKeyValueFormatter.formatOverlayValue(10_000_000));
-		assertEquals("12.3M", LootKeyValueFormatter.formatOverlayValue(12_345_678));
-		assertEquals("1B", LootKeyValueFormatter.formatOverlayValue(1_000_000_000));
-		assertEquals("2.1B", LootKeyValueFormatter.formatOverlayValue(2_147_483_647));
+		assertEquals("10m", LootKeyValueFormatter.formatOverlayValue(10_000_000));
+		assertEquals("12.3m", LootKeyValueFormatter.formatOverlayValue(12_345_678));
+		assertEquals("1b", LootKeyValueFormatter.formatOverlayValue(1_000_000_000));
+		assertEquals("2.1b", LootKeyValueFormatter.formatOverlayValue(2_147_483_647));
 	}
 
 	@Test

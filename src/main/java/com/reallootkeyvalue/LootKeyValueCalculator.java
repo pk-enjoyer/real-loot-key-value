@@ -72,6 +72,19 @@ class LootKeyValueCalculator
 		return CONTAINER_IDS[slot];
 	}
 
+	int keySlotForContainerId(int containerId)
+	{
+		for (int slot = 0; slot < CONTAINER_IDS.length; slot++)
+		{
+			if (CONTAINER_IDS[slot] == containerId)
+			{
+				return slot;
+			}
+		}
+
+		return -1;
+	}
+
 	int containerIdForKeyPosition(int itemX, int parentX, int slotPitch)
 	{
 		if (slotPitch <= 0)
