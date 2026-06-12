@@ -69,20 +69,20 @@ public class LootKeyValueCalculatorTest
 	}
 
 	@Test
-	public void mapsLootKeyHorizontalPositionsToContainers()
+	public void mapsLootKeyHorizontalPositionsToSlots()
 	{
-		assertEquals(InventoryID.DEADMAN_LOOT_INV0, calculator.containerIdForKeyPosition(184, 164, 53));
-		assertEquals(InventoryID.DEADMAN_LOOT_INV1, calculator.containerIdForKeyPosition(237, 164, 53));
-		assertEquals(InventoryID.DEADMAN_LOOT_INV2, calculator.containerIdForKeyPosition(290, 164, 53));
-		assertEquals(InventoryID.DEADMAN_LOOT_INV3, calculator.containerIdForKeyPosition(343, 164, 53));
-		assertEquals(InventoryID.DEADMAN_LOOT_INV4, calculator.containerIdForKeyPosition(396, 164, 53));
+		assertEquals(0, calculator.keySlotForPosition(184, 164, 53));
+		assertEquals(1, calculator.keySlotForPosition(237, 164, 53));
+		assertEquals(2, calculator.keySlotForPosition(290, 164, 53));
+		assertEquals(3, calculator.keySlotForPosition(343, 164, 53));
+		assertEquals(4, calculator.keySlotForPosition(396, 164, 53));
 	}
 
 	@Test
-	public void returnsNegativeContainerForInvalidLootKeyPositions()
+	public void returnsNegativeSlotForInvalidLootKeyPositions()
 	{
-		assertEquals(-1, calculator.containerIdForKeyPosition(100, 164, 53));
-		assertEquals(-1, calculator.containerIdForKeyPosition(184, 164, 0));
+		assertEquals(-1, calculator.keySlotForPosition(100, 164, 53));
+		assertEquals(-1, calculator.keySlotForPosition(184, 164, 0));
 	}
 
 	@Test
