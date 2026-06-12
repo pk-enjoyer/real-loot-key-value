@@ -14,7 +14,7 @@ The plugin is display-only. It does not change loot, add actions, click anything
 
 <img width="184" height="205" alt="Screenshot From 2026-06-06 17-14-12" src="https://github.com/user-attachments/assets/571d66e2-a0c6-4903-9338-48a0699dac7e" />
 
-|After|After |
-| ------------- | ------------- |
+| After                                                                                                                                                            | After                                                                                                                                                            |
+|------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | <img width="584" height="605" alt="Screenshot From 2026-06-06 17-14-50" src="https://github.com/user-attachments/assets/cf02c3af-1143-469e-9591-b8ee922cb91c" /> | <img width="586" height="606" alt="Screenshot From 2026-06-06 18-21-45" src="https://github.com/user-attachments/assets/e4560002-4eb5-4850-a725-a39c467312f5" /> | 
-| <img width="586" height="606" alt="Screenshot From 2026-06-06 18-18-32" src="https://github.com/user-attachments/assets/84fdcf3b-9a08-4b0d-a579-f8d83f0cb22a" /> |<img width="586" height="606" alt="Screenshot From 2026-06-06 18-19-37" src="https://github.com/user-attachments/assets/0c575ed6-7dc8-4121-b2c0-819a6a03341f" /> |
+| <img width="586" height="606" alt="Screenshot From 2026-06-06 18-18-32" src="https://github.com/user-attachments/assets/84fdcf3b-9a08-4b0d-a579-f8d83f0cb22a" /> | <img width="586" height="606" alt="Screenshot From 2026-06-06 18-19-37" src="https://github.com/user-attachments/assets/0c575ed6-7dc8-4121-b2c0-819a6a03341f" /> |
