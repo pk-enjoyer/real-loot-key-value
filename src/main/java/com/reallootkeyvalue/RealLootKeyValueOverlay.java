@@ -7,10 +7,7 @@ import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.Shape;
-import java.awt.image.BufferedImage;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -19,7 +16,6 @@ import net.runelite.api.Client;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.MenuEntry;
-import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.MenuOpened;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.WidgetLoaded;
@@ -29,40 +25,23 @@ import net.runelite.api.widgets.WidgetItem;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.overlay.WidgetItemOverlay;
-import net.runelite.client.util.ImageUtil;
 
 class RealLootKeyValueOverlay extends WidgetItemOverlay
 {
-	private static final BufferedImage LOOT_KEY_IMAGE = ImageUtil.loadImageResource(RealLootKeyValueOverlay.class, "/com/reallootkeyvalue/loot_key.png");
-	private static final BufferedImage LOOT_KEY_IMAGE_WITH_INNER_SHADOW = createInnerShadowImage(LOOT_KEY_IMAGE);
-	private static final BufferedImage LOOT_KEY_IMAGE_CAST_SHADOW = createCastShadowImage(LOOT_KEY_IMAGE);
 	private static final Color CHEST_BACKGROUND = new Color(64, 55, 43);
-	private static final Color KEY_TAB_GRADIENT_TOP = new Color(0x3a3329);
-	private static final Color KEY_TAB_GRADIENT_BOTTOM = new Color(0x453d32);
-	private static final Color HOVER_BACKGROUND = new Color(0x453d32);
 	private static final Color PATCH_BORDER = new Color(38, 32, 25);
 	private static final Color PATCH_BORDER_SHADOW = new Color(20, 17, 13);
 	private static final Color TEXT_COLOR = new Color(255, 255, 255);
 	private static final Color HIGH_VALUE_TEXT_COLOR = new Color(13, 196, 102);
 	private static final long HIGH_VALUE_TEXT_THRESHOLD = 10_000_000L;
-	private static final int PATCH_X_OFFSET = 0;
-	private static final int PATCH_Y_OFFSET = -1;
-	private static final int PATCH_MIN_WIDTH = 35;
-	private static final int ICON_X_OFFSET = -1;
-	private static final int ICON_Y_OFFSET = 1;
-	private static final int ICON_CAST_SHADOW_X_OFFSET = 1;
-	private static final int ICON_CAST_SHADOW_Y_OFFSET = 0;
-	private static final int TEXT_Y_OFFSET = 33;
-	private static final int PATCH_PADDING_X = 2;
-	private static final int PATCH_PADDING_BOTTOM = 0;
 	private static final int KEY_SLOT_PITCH = 40;
-	private static final int PATCH_CORNER_CUT = 4;
 	private static final int BOTTOM_TEXT_BASELINE_Y_OFFSET = 208;
 	private static final int TOP_RIGHT_TEXT_RIGHT_OFFSET = 278;
 	private static final int TOP_RIGHT_TEXT_BASELINE_Y_OFFSET = 11;
 	private static final int TOP_RIGHT_TEXT_LINE_GAP = 1;
 	private static final int TOP_RIGHT_TEXT_PADDING_X = 3;
 	private static final int TOP_RIGHT_TEXT_PADDING_Y = 2;
+	private static final int PATCH_CORNER_CUT = 4;
 	private static final String BOTTOM_TEXT_PREFIX = "Value in chest: ";
 	private static final Pattern VIEW_TAB_PATTERN = Pattern.compile("(?i)\\bview\\s+tab\\s+(\\d+)\\b");
 
@@ -76,12 +55,7 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 	private Rectangle pendingTopRightTextBounds;
 	private String pendingTopRightText;
 	private Color pendingTopRightTextColor;
-	private final List<KeyImageTile> pendingKeyImageTiles = new ArrayList<>();
-	private final Map<TabPatchKey, BufferedImage> tabPatchImages = new HashMap<>();
 	private int selectedKeySlot = -1;
-	private int hoveredKeySlot = -1;
-	private boolean refreshSelectedKeySlotFromChest;
-	private int refreshSelectedKeySlotAttempts;
 
 	@Inject
 	RealLootKeyValueOverlay(Client client, ItemManager itemManager, LootKeyValueCalculator calculator, RealLootKeyValueConfig config)
@@ -92,6 +66,7 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 		this.config = config;
 		showOnInterfaces(InterfaceID.WILDY_LOOT_CHEST);
 	}
+
 
 	void onMenuOptionClicked(MenuOptionClicked event)
 	{
@@ -117,45 +92,38 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 		}
 	}
 
-	void onItemContainerChanged(ItemContainerChanged event)
-	{
-		if (calculator.keySlotForContainerId(event.getContainerId()) < 0)
-		{
-			return;
-		}
-	}
-
 	void onWidgetLoaded(WidgetLoaded event)
 	{
 		if (event.getGroupId() == InterfaceID.WILDY_LOOT_CHEST)
 		{
 			selectKeySlot(-1);
-			requestSelectedKeySlotRefresh();
 		}
 	}
 
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		refreshSelectedKeySlotFromChest();
-		hoveredKeySlot = getHoveredKeySlot();
-
 		pendingBottomTextBounds = null;
 		pendingBottomTextKeySlot = -1;
 		pendingBottomText = null;
 		pendingTopRightTextBounds = null;
 		pendingTopRightText = null;
 		pendingTopRightTextColor = TEXT_COLOR;
-		pendingKeyImageTiles.clear();
+
+		if (!config.showBottomText() && !config.showTopRightText())
+		{
+			return null;
+		}
+
+		final int visibleKeySlot = getVisibleChestKeySlot();
+		if (visibleKeySlot >= 0)
+		{
+			selectKeySlot(visibleKeySlot);
+		}
 
 		final Shape originalClip = graphics.getClip();
 		final Dimension dimension = super.render(graphics);
 		graphics.setClip(originalClip);
-
-		for (KeyImageTile keyImageTile : pendingKeyImageTiles)
-		{
-			renderKeyImageTile(graphics, keyImageTile.bounds, isTabHovered(keyImageTile.keySlot), isTabActive(keyImageTile.keySlot));
-		}
 
 		if (pendingBottomTextBounds != null && pendingBottomText != null)
 		{
@@ -193,16 +161,6 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 
 		final long value = calculator.calculateGeValue(container, itemManager::getItemPrice);
 		final Color valueTextColor = getValueTextColor(value);
-		if (config.showCompactKeyTabValue())
-		{
-			final String text = LootKeyValueFormatter.formatOverlayValue(value);
-			renderReplacementTile(graphics, widgetItem.getCanvasBounds(), text, valueTextColor, isTabHovered(keySlot), isTabActive(keySlot));
-		}
-		else if (config.showKeyTabIcon())
-		{
-			queueKeyImageTile(widgetItem);
-		}
-
 		if (config.showBottomText() && shouldRenderValueTextForKey(keySlot))
 		{
 			queueBottomText(widgetItem, keySlot, LootKeyValueFormatter.formatChestValue(value));
@@ -231,11 +189,6 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 		pendingTopRightTextBounds = getTopRightNormalizedBounds(widgetItem.getCanvasBounds(), keySlot);
 		pendingTopRightText = text;
 		pendingTopRightTextColor = textColor;
-	}
-
-	private void queueKeyImageTile(WidgetItem widgetItem)
-	{
-		pendingKeyImageTiles.add(new KeyImageTile(widgetItem.getCanvasBounds(), getKeySlot(widgetItem)));
 	}
 
 	private Rectangle getTopRightNormalizedBounds(Rectangle bounds, int keySlot)
@@ -284,11 +237,6 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 	{
 		return selectedKeySlot >= 0 &&
 			calculator.hasItems(client.getItemContainer(calculator.containerIdForKeySlot(selectedKeySlot)));
-	}
-
-	private int getHoveredKeySlot()
-	{
-		return getKeySlot(client.getMenuEntries());
 	}
 
 	private int getKeySlot(MenuEntry[] menuEntries)
@@ -340,41 +288,6 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 				return slot;
 			}
 		}
-	}
-
-	private void refreshSelectedKeySlotFromChest()
-	{
-		if (!refreshSelectedKeySlotFromChest)
-		{
-			return;
-		}
-
-		final int visibleKeySlot = getVisibleChestKeySlot();
-		if (visibleKeySlot >= 0)
-		{
-			selectKeySlot(visibleKeySlot);
-		}
-		else
-		{
-			refreshSelectedKeySlotAttempts--;
-			if (refreshSelectedKeySlotAttempts <= 0)
-			{
-				refreshSelectedKeySlotFromChest = false;
-			}
-		}
-	}
-
-	private void requestSelectedKeySlotRefresh()
-	{
-		refreshSelectedKeySlotFromChest = true;
-		refreshSelectedKeySlotAttempts = 5;
-	}
-
-	private void selectKeySlot(int keySlot)
-	{
-		selectedKeySlot = keySlot;
-		refreshSelectedKeySlotFromChest = false;
-		refreshSelectedKeySlotAttempts = 0;
 	}
 
 	private int getVisibleChestKeySlot()
@@ -479,17 +392,8 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 			return -1;
 		}
 
-		return Math.round((float) relativeX / KEY_SLOT_PITCH);
-	}
-
-	private boolean isTabHovered(int keySlot)
-	{
-		return keySlot >= 0 && hoveredKeySlot == keySlot;
-	}
-
-	private boolean isTabActive(int keySlot)
-	{
-		return keySlot >= 0 && selectedKeySlot == keySlot;
+		final int slot = Math.round((float) relativeX / KEY_SLOT_PITCH);
+		return calculator.containerIdForKeySlot(slot) >= 0 ? slot : -1;
 	}
 
 	private int parseViewTab(String option, String target)
@@ -533,42 +437,9 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 		return value == null ? "" : value.replaceAll("<[^>]*>", "");
 	}
 
-	private void renderReplacementTile(Graphics2D graphics, Rectangle itemBounds, String text, Color textColor, boolean hovered, boolean active)
+	private void selectKeySlot(int keySlot)
 	{
-		graphics.setFont(FontManager.getRunescapeSmallFont());
-
-		final FontMetrics metrics = graphics.getFontMetrics();
-		final int textWidth = metrics.stringWidth(text);
-		final int patchWidth = Math.max(PATCH_MIN_WIDTH, textWidth + (PATCH_PADDING_X * 2));
-		final int patchX = itemBounds.x + PATCH_X_OFFSET;
-		final int patchY = itemBounds.y + PATCH_Y_OFFSET;
-		final int iconX = patchX + ((patchWidth - LOOT_KEY_IMAGE_WITH_INNER_SHADOW.getWidth()) / 2) + ICON_X_OFFSET;
-		final int iconY = itemBounds.y + ICON_Y_OFFSET;
-		final int textX = patchX + ((patchWidth - textWidth) / 2);
-		final int textBaselineY = itemBounds.y + TEXT_Y_OFFSET;
-		final int patchHeight = (textBaselineY - patchY) + metrics.getDescent() + PATCH_PADDING_BOTTOM;
-
-		fillTabPatch(graphics, patchX, patchY, patchWidth, patchHeight, hovered, active);
-		graphics.drawImage(LOOT_KEY_IMAGE_CAST_SHADOW, iconX + ICON_CAST_SHADOW_X_OFFSET, iconY + ICON_CAST_SHADOW_Y_OFFSET, null);
-		graphics.drawImage(LOOT_KEY_IMAGE_WITH_INNER_SHADOW, iconX, iconY, null);
-		renderPlainText(graphics, text, textX, textBaselineY, textColor);
-	}
-
-	private void renderKeyImageTile(Graphics2D graphics, Rectangle itemBounds, boolean hovered, boolean active)
-	{
-		graphics.setFont(FontManager.getRunescapeSmallFont());
-
-		final FontMetrics metrics = graphics.getFontMetrics();
-		final int patchX = itemBounds.x + PATCH_X_OFFSET;
-		final int patchY = itemBounds.y + PATCH_Y_OFFSET;
-		final int textBaselineY = itemBounds.y + TEXT_Y_OFFSET;
-		final int patchHeight = (textBaselineY - patchY) + metrics.getDescent() + PATCH_PADDING_BOTTOM;
-		final int iconX = patchX + ((PATCH_MIN_WIDTH - LOOT_KEY_IMAGE_WITH_INNER_SHADOW.getWidth()) / 2) + ICON_X_OFFSET;
-		final int iconY = itemBounds.y + ICON_Y_OFFSET;
-
-		fillTabPatch(graphics, patchX, patchY, PATCH_MIN_WIDTH, patchHeight, hovered, active);
-		graphics.drawImage(LOOT_KEY_IMAGE_CAST_SHADOW, iconX + ICON_CAST_SHADOW_X_OFFSET, iconY + ICON_CAST_SHADOW_Y_OFFSET, null);
-		graphics.drawImage(LOOT_KEY_IMAGE_WITH_INNER_SHADOW, iconX, iconY, null);
+		selectedKeySlot = keySlot;
 	}
 
 	private void renderBottomText(Graphics2D graphics, Rectangle bounds, int keySlot, String text)
@@ -579,10 +450,10 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 		final String valueText = text.startsWith(BOTTOM_TEXT_PREFIX) ? text.substring(BOTTOM_TEXT_PREFIX.length()) : text;
 		final int valueTextWidth = metrics.stringWidth(valueText);
 		final int gpTextWidth = metrics.stringWidth(" gp") - 1;
-		final int textX = firstTabX + ((int) Math.round(KEY_SLOT_PITCH * 2) + gpTextWidth) - ((valueTextWidth/2));
+		final int textX = firstTabX + ((int) Math.round(KEY_SLOT_PITCH * 2) + gpTextWidth) - (valueTextWidth / 2);
 		final int textY = bounds.y + BOTTOM_TEXT_BASELINE_Y_OFFSET;
 
-		renderPlainText(graphics, text, textX, textY);
+		renderPlainText(graphics, text, textX, textY, TEXT_COLOR);
 	}
 
 	private void renderTopRightText(Graphics2D graphics, Rectangle bounds, String amountText, Color amountColor)
@@ -609,89 +480,15 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 		graphics.drawPolygon(createCutCornerPatch(patchX, patchY, patchWidth, patchHeight));
 
 		graphics.setFont(FontManager.getRunescapeSmallFont());
-		renderPlainText(graphics, labelText, textX + ((blockWidth - labelMetrics.stringWidth(labelText)) / 2), labelY);
+		renderPlainText(graphics, labelText, textX + ((blockWidth - labelMetrics.stringWidth(labelText)) / 2), labelY, TEXT_COLOR);
 		graphics.setFont(FontManager.getRunescapeFont());
 		renderPlainText(graphics, amountText, textX + ((blockWidth - amountMetrics.stringWidth(amountText)) / 2), amountY, amountColor);
-	}
-
-	private void renderPlainText(Graphics2D graphics, String text, int x, int y)
-	{
-		renderPlainText(graphics, text, x, y, TEXT_COLOR);
 	}
 
 	private void renderPlainText(Graphics2D graphics, String text, int x, int y, Color color)
 	{
 		graphics.setColor(color);
 		graphics.drawString(text, x, y);
-	}
-
-	private Polygon createTabPatch(int x, int y, int width, int height)
-	{
-		Polygon polygon = new Polygon();
-		polygon.addPoint(x, y);
-		polygon.addPoint(x + width - PATCH_CORNER_CUT, y);
-		polygon.addPoint(x + width, y + PATCH_CORNER_CUT);
-		polygon.addPoint(x + width, y + height);
-		polygon.addPoint(x, y + height);
-		return polygon;
-	}
-
-	private void fillTabPatch(Graphics2D graphics, int x, int y, int width, int height, boolean hovered, boolean active)
-	{
-		graphics.drawImage(getTabPatchImage(width, height, hovered || active), x, y, null);
-	}
-
-	private BufferedImage getTabPatchImage(int width, int height, boolean highlighted)
-	{
-		final TabPatchKey key = new TabPatchKey(width, height, highlighted);
-		BufferedImage image = tabPatchImages.get(key);
-		if (image == null)
-		{
-			image = createTabPatchImage(width, height, highlighted);
-			tabPatchImages.put(key, image);
-		}
-
-		return image;
-	}
-
-	private BufferedImage createTabPatchImage(int width, int height, boolean highlighted)
-	{
-		final BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-		final Graphics2D graphics = image.createGraphics();
-		final Polygon patch = createTabPatch(0, 0, width, height);
-		if (highlighted)
-		{
-			graphics.setColor(HOVER_BACKGROUND);
-			graphics.fillPolygon(patch);
-			graphics.dispose();
-			return image;
-		}
-
-		graphics.setClip(patch);
-
-		final int fadeStartY = (height * 3) / 5;
-		final int fadeHeight = Math.max(1, height - fadeStartY);
-		graphics.setColor(KEY_TAB_GRADIENT_TOP);
-		graphics.fillRect(0, 0, width, fadeStartY);
-
-		for (int step = 0; step < 5; step++)
-		{
-			final int bandY = fadeStartY + ((fadeHeight * step) / 5);
-			final int nextBandY = fadeStartY + ((fadeHeight * (step + 1)) / 5);
-			graphics.setColor(lerp(KEY_TAB_GRADIENT_TOP, KEY_TAB_GRADIENT_BOTTOM, step + 1, 5));
-			graphics.fillRect(0, bandY, width, Math.max(1, nextBandY - bandY));
-		}
-
-		graphics.dispose();
-		return image;
-	}
-
-	private Color lerp(Color from, Color to, int step, int steps)
-	{
-		final int red = from.getRed() + (((to.getRed() - from.getRed()) * step) / steps);
-		final int green = from.getGreen() + (((to.getGreen() - from.getGreen()) * step) / steps);
-		final int blue = from.getBlue() + (((to.getBlue() - from.getBlue()) * step) / steps);
-		return new Color(red, green, blue);
 	}
 
 	private Polygon createCutCornerPatch(int x, int y, int width, int height)
@@ -706,150 +503,5 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 		polygon.addPoint(x, y + height - PATCH_CORNER_CUT);
 		polygon.addPoint(x, y + PATCH_CORNER_CUT);
 		return polygon;
-	}
-
-	private static BufferedImage createInnerShadowImage(BufferedImage source)
-	{
-		final BufferedImage image = new BufferedImage(source.getWidth(), source.getHeight(), BufferedImage.TYPE_INT_ARGB);
-		for (int y = 0; y < source.getHeight(); y++)
-		{
-			for (int x = 0; x < source.getWidth(); x++)
-			{
-				final int argb = source.getRGB(x, y);
-				final int alpha = (argb >>> 24) & 0xff;
-				if (alpha == 0)
-				{
-					image.setRGB(x, y, argb);
-					continue;
-				}
-
-				final int shadow = getInnerShadowStrength(source, x, y);
-				image.setRGB(x, y, darken(argb, shadow));
-			}
-		}
-
-		return image;
-	}
-
-	private static BufferedImage createCastShadowImage(BufferedImage source)
-	{
-		final BufferedImage image = new BufferedImage(source.getWidth(), source.getHeight(), BufferedImage.TYPE_INT_ARGB);
-		for (int y = 0; y < source.getHeight(); y++)
-		{
-			for (int x = 0; x < source.getWidth(); x++)
-			{
-				final int alpha = (source.getRGB(x, y) >>> 24) & 0xff;
-				if (alpha == 0)
-				{
-					continue;
-				}
-
-				image.setRGB(x, y, Math.min(95, alpha / 2) << 24);
-			}
-		}
-
-		return image;
-	}
-
-	private static int getInnerShadowStrength(BufferedImage source, int x, int y)
-	{
-		int strength = 0;
-		for (int dy = -4; dy <= 4; dy++)
-		{
-			for (int dx = -4; dx <= 4; dx++)
-			{
-				if (dx == 0 && dy == 0 || Math.abs(dx) + Math.abs(dy) > 6)
-				{
-					continue;
-				}
-
-				if (!isTransparent(source, x + dx, y + dy))
-				{
-					continue;
-				}
-
-				final int distance = Math.max(Math.abs(dx), Math.abs(dy));
-				final int directionalWeight = dx <= 0 && dy <= 0 ? 28 : 16;
-				strength = Math.max(strength, directionalWeight - (distance * 3));
-			}
-		}
-
-		return strength;
-	}
-
-	private static boolean isTransparent(BufferedImage source, int x, int y)
-	{
-		if (x < 0 || y < 0 || x >= source.getWidth() || y >= source.getHeight())
-		{
-			return true;
-		}
-
-		return ((source.getRGB(x, y) >>> 24) & 0xff) < 24;
-	}
-
-	private static int darken(int argb, int amount)
-	{
-		if (amount <= 0)
-		{
-			return argb;
-		}
-
-		final int alpha = (argb >>> 24) & 0xff;
-		final int red = Math.max(0, ((argb >>> 16) & 0xff) - amount);
-		final int green = Math.max(0, ((argb >>> 8) & 0xff) - amount);
-		final int blue = Math.max(0, (argb & 0xff) - amount);
-		return (alpha << 24) | (red << 16) | (green << 8) | blue;
-	}
-
-	private static final class KeyImageTile
-	{
-		private final Rectangle bounds;
-		private final int keySlot;
-
-		private KeyImageTile(Rectangle bounds, int keySlot)
-		{
-			this.bounds = bounds;
-			this.keySlot = keySlot;
-		}
-	}
-
-	private static final class TabPatchKey
-	{
-		private final int width;
-		private final int height;
-		private final boolean highlighted;
-
-		private TabPatchKey(int width, int height, boolean highlighted)
-		{
-			this.width = width;
-			this.height = height;
-			this.highlighted = highlighted;
-		}
-
-		@Override
-		public boolean equals(Object other)
-		{
-			if (this == other)
-			{
-				return true;
-			}
-
-			if (!(other instanceof TabPatchKey))
-			{
-				return false;
-			}
-
-			final TabPatchKey key = (TabPatchKey) other;
-			return width == key.width && height == key.height && highlighted == key.highlighted;
-		}
-
-		@Override
-		public int hashCode()
-		{
-			int result = width;
-			result = (31 * result) + height;
-			result = (31 * result) + (highlighted ? 1 : 0);
-			return result;
-		}
 	}
 }

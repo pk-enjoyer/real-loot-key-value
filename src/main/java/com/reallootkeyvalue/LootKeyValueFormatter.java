@@ -14,7 +14,7 @@ final class LootKeyValueFormatter
 	{
 	}
 
-	static String formatOverlayValue(long value)
+	static String formatTabValue(long value)
 	{
 		if (value < 100_000L)
 		{
