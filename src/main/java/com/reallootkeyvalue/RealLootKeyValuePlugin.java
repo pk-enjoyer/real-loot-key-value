@@ -8,6 +8,7 @@ import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
@@ -25,28 +26,40 @@ public class RealLootKeyValuePlugin extends Plugin
 	@Inject
 	private RealLootKeyValueOverlay overlay;
 
+	@Inject
+	private RealLootKeyValueWidgets widgets;
+
 	@Override
 	protected void startUp()
 	{
 		overlayManager.add(overlay);
+		widgets.startUp();
 	}
 
 	@Override
 	protected void shutDown()
 	{
 		overlayManager.remove(overlay);
+		widgets.shutDown();
 	}
 
 	@Subscribe
 	public void onWidgetLoaded(WidgetLoaded event)
 	{
 		overlay.onWidgetLoaded(event);
+		widgets.onWidgetLoaded(event);
+	}
+
+	@Subscribe
+	public void onConfigChanged(ConfigChanged event)
+	{
+		widgets.onConfigChanged(event);
 	}
 
 	@Subscribe
 	public void onItemContainerChanged(ItemContainerChanged event)
 	{
-		overlay.onItemContainerChanged(event);
+		widgets.onItemContainerChanged(event);
 	}
 
 	@Subscribe
