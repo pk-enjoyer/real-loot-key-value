@@ -146,12 +146,15 @@ class RealLootKeyValueWidgets
 			final int containerId = calculator.containerIdForKeySlot(slot);
 			if (containerId < 0)
 			{
+				clearTabWidgetText(slot, textWidget);
 				continue;
 			}
 
 			final ItemContainer container = client.getItemContainer(containerId);
 			if (!calculator.hasItems(container))
 			{
+				log.debug("Loot key tab slot {} compact value cleared because container {} is empty", slot, containerId);
+				clearTabWidgetText(slot, textWidget);
 				continue;
 			}
 
@@ -247,6 +250,22 @@ class RealLootKeyValueWidgets
 		tabTextWidget.setText(text);
 		tabTextWidget.setTextColor(color.getRGB() & 0x00ffffff);
 		tabTextWidget.revalidate();
+	}
+
+	private void clearTabWidgetText(int slot, Widget textWidget)
+	{
+		managedTabTextsBySlot.remove(slot);
+		originalTabTextsBySlot.remove(slot);
+
+		log.debug("Loot key tab clear slot {} widget={} index={} bounds={} currentText={}",
+			slot,
+			textWidget.getId(),
+			textWidget.getIndex(),
+			textWidget.getBounds(),
+			textWidget.getText());
+		textWidget.setText("");
+		textWidget.setTextColor(TEXT_COLOR.getRGB() & 0x00ffffff);
+		textWidget.revalidate();
 	}
 
 	private void rememberOriginalText(int slot, Widget tabTextWidget)
