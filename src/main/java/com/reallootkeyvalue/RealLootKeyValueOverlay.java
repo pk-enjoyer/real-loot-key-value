@@ -101,6 +101,40 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 	}
 
 	@Override
+	public void renderItemOverlay(Graphics2D graphics, int itemId, WidgetItem widgetItem)
+	{
+		if (!calculator.isLootKeyItem(itemId))
+		{
+			return;
+		}
+
+		final int keySlot = getKeySlot(widgetItem);
+		final int containerId = calculator.containerIdForKeySlot(keySlot);
+		if (containerId < 0)
+		{
+			return;
+		}
+
+		final ItemContainer container = client.getItemContainer(containerId);
+		if (!calculator.hasItems(container))
+		{
+			return;
+		}
+
+		final long value = calculator.calculateGeValue(container, itemManager::getItemPrice);
+		final Color valueTextColor = getValueTextColor(value);
+		if (config.showBottomText() && shouldRenderValueTextForKey(keySlot))
+		{
+			queueBottomText(widgetItem, keySlot, LootKeyValueFormatter.formatChestValue(value));
+		}
+
+		if (config.showTopRightText() && shouldRenderValueTextForKey(keySlot))
+		{
+			queueTopRightText(widgetItem, keySlot, LootKeyValueFormatter.formatGpAmount(value), valueTextColor);
+		}
+	}
+
+	@Override
 	public Dimension render(Graphics2D graphics)
 	{
 		pendingBottomTextBounds = null;
@@ -136,40 +170,6 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 		}
 
 		return dimension;
-	}
-
-	@Override
-	public void renderItemOverlay(Graphics2D graphics, int itemId, WidgetItem widgetItem)
-	{
-		if (!calculator.isLootKeyItem(itemId))
-		{
-			return;
-		}
-
-		final int keySlot = getKeySlot(widgetItem);
-		final int containerId = calculator.containerIdForKeySlot(keySlot);
-		if (containerId < 0)
-		{
-			return;
-		}
-
-		final ItemContainer container = client.getItemContainer(containerId);
-		if (!calculator.hasItems(container))
-		{
-			return;
-		}
-
-		final long value = calculator.calculateGeValue(container, itemManager::getItemPrice);
-		final Color valueTextColor = getValueTextColor(value);
-		if (config.showBottomText() && shouldRenderValueTextForKey(keySlot))
-		{
-			queueBottomText(widgetItem, keySlot, LootKeyValueFormatter.formatChestValue(value));
-		}
-
-		if (config.showTopRightText() && shouldRenderValueTextForKey(keySlot))
-		{
-			queueTopRightText(widgetItem, keySlot, LootKeyValueFormatter.formatGpAmount(value), valueTextColor);
-		}
 	}
 
 	private Color getValueTextColor(long value)
