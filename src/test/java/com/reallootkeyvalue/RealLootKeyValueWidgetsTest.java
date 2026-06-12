@@ -11,10 +11,9 @@ import net.runelite.api.gameval.ItemID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.game.ItemManager;
+import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -32,6 +31,35 @@ public class RealLootKeyValueWidgetsTest
 
 	private RealLootKeyValueWidgets widgets;
 	private Widget firstTabText;
+
+	private static Widget textWidget(int id, String initialText)
+	{
+		final Widget widget = mock(Widget.class);
+		final AtomicReference<String> text = new AtomicReference<>(initialText);
+		final AtomicInteger textColor = new AtomicInteger(0xff981f);
+
+		when(widget.getId()).thenReturn(id);
+		when(widget.getIndex()).thenReturn(id);
+		when(widget.getBounds()).thenReturn(new Rectangle());
+		when(widget.getText()).thenAnswer(invocation -> text.get());
+		when(widget.setText(anyString())).thenAnswer(invocation -> {
+			text.set(invocation.getArgument(0, String.class));
+			return widget;
+		});
+		when(widget.getTextColor()).thenAnswer(invocation -> textColor.get());
+		when(widget.setTextColor(anyInt())).thenAnswer(invocation -> {
+			textColor.set(invocation.getArgument(0, Integer.class));
+			return widget;
+		});
+		return widget;
+	}
+
+	private static ItemContainer container(Item... items)
+	{
+		final ItemContainer container = mock(ItemContainer.class);
+		when(container.getItems()).thenReturn(items);
+		return container;
+	}
 
 	@Before
 	public void setUp()
@@ -120,34 +148,5 @@ public class RealLootKeyValueWidgetsTest
 		}
 		firstTabText = children[10];
 		return children;
-	}
-
-	private static Widget textWidget(int id, String initialText)
-	{
-		final Widget widget = mock(Widget.class);
-		final AtomicReference<String> text = new AtomicReference<>(initialText);
-		final AtomicInteger textColor = new AtomicInteger(0xff981f);
-
-		when(widget.getId()).thenReturn(id);
-		when(widget.getIndex()).thenReturn(id);
-		when(widget.getBounds()).thenReturn(new Rectangle());
-		when(widget.getText()).thenAnswer(invocation -> text.get());
-		when(widget.setText(anyString())).thenAnswer(invocation -> {
-			text.set(invocation.getArgument(0, String.class));
-			return widget;
-		});
-		when(widget.getTextColor()).thenAnswer(invocation -> textColor.get());
-		when(widget.setTextColor(anyInt())).thenAnswer(invocation -> {
-			textColor.set(invocation.getArgument(0, Integer.class));
-			return widget;
-		});
-		return widget;
-	}
-
-	private static ItemContainer container(Item... items)
-	{
-		final ItemContainer container = mock(ItemContainer.class);
-		when(container.getItems()).thenReturn(items);
-		return container;
 	}
 }
