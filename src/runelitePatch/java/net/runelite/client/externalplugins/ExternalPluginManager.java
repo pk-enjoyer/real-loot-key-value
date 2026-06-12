@@ -10,6 +10,7 @@ import net.runelite.client.plugins.PluginInstantiationException;
 import net.runelite.client.plugins.PluginManager;
 
 @Singleton
+@SuppressWarnings({"unused", "SameReturnValue"})
 public class ExternalPluginManager
 {
 	private static Class<? extends Plugin>[] builtinExternals;

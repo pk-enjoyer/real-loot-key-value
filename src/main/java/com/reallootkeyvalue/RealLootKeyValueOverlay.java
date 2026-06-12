@@ -386,14 +386,7 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 
 	private int keySlotForPosition(int itemX, int parentX)
 	{
-		final int relativeX = itemX - parentX;
-		if (relativeX < 0)
-		{
-			return -1;
-		}
-
-		final int slot = Math.round((float) relativeX / KEY_SLOT_PITCH);
-		return calculator.containerIdForKeySlot(slot) >= 0 ? slot : -1;
+		return calculator.keySlotForPosition(itemX, parentX, KEY_SLOT_PITCH);
 	}
 
 	private int parseViewTab(String option, String target)
@@ -450,7 +443,7 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 		final String valueText = text.startsWith(BOTTOM_TEXT_PREFIX) ? text.substring(BOTTOM_TEXT_PREFIX.length()) : text;
 		final int valueTextWidth = metrics.stringWidth(valueText);
 		final int gpTextWidth = metrics.stringWidth(" gp") - 1;
-		final int textX = firstTabX + ((int) Math.round(KEY_SLOT_PITCH * 2) + gpTextWidth) - (valueTextWidth / 2);
+		final int textX = firstTabX + (KEY_SLOT_PITCH * 2) + gpTextWidth - (valueTextWidth / 2);
 		final int textY = bounds.y + BOTTOM_TEXT_BASELINE_Y_OFFSET;
 
 		renderPlainText(graphics, text, textX, textY, TEXT_COLOR);

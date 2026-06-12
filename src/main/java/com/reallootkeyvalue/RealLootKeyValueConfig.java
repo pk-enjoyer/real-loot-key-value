@@ -5,6 +5,7 @@ import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 
 @ConfigGroup("realLootKeyValue")
+@SuppressWarnings("SameReturnValue")
 public interface RealLootKeyValueConfig extends Config
 {
 	@ConfigItem(
