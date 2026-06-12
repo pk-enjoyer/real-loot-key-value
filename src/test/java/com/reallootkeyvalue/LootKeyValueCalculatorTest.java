@@ -4,18 +4,24 @@ import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
-import org.junit.Before;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class LootKeyValueCalculatorTest
 {
 	private LootKeyValueCalculator calculator;
+
+	private static ItemContainer container(Item... items)
+	{
+		ItemContainer container = mock(ItemContainer.class);
+		when(container.getItems()).thenReturn(items);
+		return container;
+	}
 
 	@Before
 	public void setUp()
@@ -63,20 +69,20 @@ public class LootKeyValueCalculatorTest
 	}
 
 	@Test
-	public void mapsLootKeyHorizontalPositionsToContainers()
+	public void mapsLootKeyHorizontalPositionsToSlots()
 	{
-		assertEquals(InventoryID.DEADMAN_LOOT_INV0, calculator.containerIdForKeyPosition(184, 164, 53));
-		assertEquals(InventoryID.DEADMAN_LOOT_INV1, calculator.containerIdForKeyPosition(237, 164, 53));
-		assertEquals(InventoryID.DEADMAN_LOOT_INV2, calculator.containerIdForKeyPosition(290, 164, 53));
-		assertEquals(InventoryID.DEADMAN_LOOT_INV3, calculator.containerIdForKeyPosition(343, 164, 53));
-		assertEquals(InventoryID.DEADMAN_LOOT_INV4, calculator.containerIdForKeyPosition(396, 164, 53));
+		assertEquals(0, calculator.keySlotForPosition(184, 164, 53));
+		assertEquals(1, calculator.keySlotForPosition(237, 164, 53));
+		assertEquals(2, calculator.keySlotForPosition(290, 164, 53));
+		assertEquals(3, calculator.keySlotForPosition(343, 164, 53));
+		assertEquals(4, calculator.keySlotForPosition(396, 164, 53));
 	}
 
 	@Test
-	public void returnsNegativeContainerForInvalidLootKeyPositions()
+	public void returnsNegativeSlotForInvalidLootKeyPositions()
 	{
-		assertEquals(-1, calculator.containerIdForKeyPosition(100, 164, 53));
-		assertEquals(-1, calculator.containerIdForKeyPosition(184, 164, 0));
+		assertEquals(-1, calculator.keySlotForPosition(100, 164, 53));
+		assertEquals(-1, calculator.keySlotForPosition(184, 164, 0));
 	}
 
 	@Test
@@ -153,12 +159,5 @@ public class LootKeyValueCalculatorTest
 	public void nullContainerCalculatesZero()
 	{
 		assertEquals(0L, calculator.calculateGeValue(null, itemId -> 1));
-	}
-
-	private static ItemContainer container(Item... items)
-	{
-		ItemContainer container = mock(ItemContainer.class);
-		when(container.getItems()).thenReturn(items);
-		return container;
 	}
 }

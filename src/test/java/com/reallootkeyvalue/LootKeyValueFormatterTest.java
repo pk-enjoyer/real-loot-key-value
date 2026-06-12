@@ -1,34 +1,33 @@
 package com.reallootkeyvalue;
 
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 public class LootKeyValueFormatterTest
 {
 	@Test
 	public void formatsSmallValuesWithCommas()
 	{
-		assertEquals("0", LootKeyValueFormatter.formatOverlayValue(0));
-		assertEquals("9,999", LootKeyValueFormatter.formatOverlayValue(9_999));
-		assertEquals("99,999", LootKeyValueFormatter.formatOverlayValue(99_999));
+		assertEquals("0", LootKeyValueFormatter.formatTabValue(0));
+		assertEquals("9,999", LootKeyValueFormatter.formatTabValue(9_999));
+		assertEquals("99,999", LootKeyValueFormatter.formatTabValue(99_999));
 	}
 
 	@Test
 	public void formatsThousandsAsFlooredK()
 	{
-		assertEquals("100k", LootKeyValueFormatter.formatOverlayValue(100_000));
-		assertEquals("1229k", LootKeyValueFormatter.formatOverlayValue(1_229_000));
-		assertEquals("9999k", LootKeyValueFormatter.formatOverlayValue(9_999_999));
+		assertEquals("100k", LootKeyValueFormatter.formatTabValue(100_000));
+		assertEquals("1229k", LootKeyValueFormatter.formatTabValue(1_229_000));
+		assertEquals("9999k", LootKeyValueFormatter.formatTabValue(9_999_999));
 	}
 
 	@Test
 	public void formatsMillionsAndBillionsCompactly()
 	{
-		assertEquals("10m", LootKeyValueFormatter.formatOverlayValue(10_000_000));
-		assertEquals("12.3m", LootKeyValueFormatter.formatOverlayValue(12_345_678));
-		assertEquals("1b", LootKeyValueFormatter.formatOverlayValue(1_000_000_000));
-		assertEquals("2.1b", LootKeyValueFormatter.formatOverlayValue(2_147_483_647));
+		assertEquals("10m", LootKeyValueFormatter.formatTabValue(10_000_000));
+		assertEquals("12.3m", LootKeyValueFormatter.formatTabValue(12_345_678));
+		assertEquals("1b", LootKeyValueFormatter.formatTabValue(1_000_000_000));
+		assertEquals("2.1b", LootKeyValueFormatter.formatTabValue(2_147_483_647));
 	}
 
 	@Test
