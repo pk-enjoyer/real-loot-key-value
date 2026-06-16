@@ -5,6 +5,7 @@ import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 
 @ConfigGroup("realLootKeyValue")
+@SuppressWarnings("SameReturnValue")
 public interface RealLootKeyValueConfig extends Config
 {
 	@ConfigItem(
@@ -20,8 +21,8 @@ public interface RealLootKeyValueConfig extends Config
 
 	@ConfigItem(
 		keyName = "showKeyTabIcon",
-		name = "Key tab icon",
-		description = "Shows the loot key icon on the key tab when the compact key tab value is disabled.",
+		name = "Hide key tab text",
+		description = "Removes the original loot key tab text when the compact key tab value is disabled.",
 		position = 1
 	)
 	default boolean showKeyTabIcon()

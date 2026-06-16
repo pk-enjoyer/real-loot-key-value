@@ -1,0 +1,100 @@
+name: Plugin Hub preflight
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      plugin_commit:
+        description: "Plugin commit SHA to package; defaults to the workflow commit"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  packager:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out plugin
+        uses: actions/checkout@v6
+        with:
+          path: plugin-source
+          persist-credentials: false
+
+      - name: Check out Plugin Hub
+        uses: actions/checkout@v6
+        with:
+          repository: runelite/plugin-hub
+          ref: master
+          fetch-depth: 0
+          path: plugin-hub
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: adopt
+          java-version: 11
+
+      - name: Write Plugin Hub manifest
+        env:
+          PLUGIN_NAME: real-loot-key-value
+          PLUGIN_REPOSITORY: "https://github.com/${{ github.repository }}.git"
+          PLUGIN_COMMIT: "${{ github.event.inputs.plugin_commit || github.event.pull_request.head.sha || github.sha }}"
+        run: |
+          set -euo pipefail
+          test -n "$PLUGIN_COMMIT"
+          {
+            echo "repository=$PLUGIN_REPOSITORY"
+            echo "commit=$PLUGIN_COMMIT"
+          } > "plugin-hub/plugins/$PLUGIN_NAME"
+
+      - name: Fetch packager
+        env:
+          PACKAGER_URL: "https://github.com/runelite/plugin-hub-tooling/releases/download/v1/bundle.tar.zst"
+        run: |
+          set -exu
+          curl --location --fail --retry 4 --max-time 30 --output bundle.tar.zst "$PACKAGER_URL"
+          sha256sum bundle.tar.zst
+          tar xf bundle.tar.zst
+
+      - name: Restore packager cache
+        id: restore-cache
+        uses: actions/cache/restore@v5
+        with:
+          path: |
+            ~/.gradle/caches/
+            api/
+          key: deps-${{ hashFiles('plugin-hub/runelite.version', 'bundle.tar.zst') }}
+
+      - name: Prepare packager dependencies
+        if: steps.restore-cache.outputs.cache-hit != 'true'
+        run: ./prepare.sh
+
+      - name: Save packager cache
+        if: steps.restore-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: ~/.gradle/caches/
+          key: ${{ steps.restore-cache.outputs.cache-primary-key }}
+
+      - name: Run Plugin Hub packager
+        env:
+          FORCE_BUILD: real-loot-key-value
+          PACKAGE_IS_PR: true
+        run: |
+          exec java -XX:+UseParallelGC -cp package.jar net.runelite.pluginhub.packager.Packager
+
+      - name: Upload manifest diff
+        uses: actions/upload-artifact@v4
+        with:
+          name: manifest_diff
+          path: /tmp/manifest_diff
+          retention-days: 1
+
+      - name: Upload packaged jars
+        uses: actions/upload-artifact@v4
+        with:
+          name: jars
+          path: /tmp/jars
+          retention-days: 4

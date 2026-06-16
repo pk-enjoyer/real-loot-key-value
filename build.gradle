@@ -32,7 +32,7 @@ sourceSets {
 }
 
 group = 'com.reallootkeyvalue'
-version = '1.0.0-beta'
+version = '1.0.0'
 
 tasks.withType(JavaCompile).configureEach {
 	options.encoding = 'UTF-8'

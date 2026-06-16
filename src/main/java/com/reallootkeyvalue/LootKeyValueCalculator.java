@@ -85,7 +85,7 @@ class LootKeyValueCalculator
 		return -1;
 	}
 
-	int containerIdForKeyPosition(int itemX, int parentX, int slotPitch)
+	int keySlotForPosition(int itemX, int parentX, int slotPitch)
 	{
 		if (slotPitch <= 0)
 		{
@@ -99,7 +99,7 @@ class LootKeyValueCalculator
 		}
 
 		final int slot = Math.round((float) relativeX / slotPitch);
-		return containerIdForKeySlot(slot);
+		return containerIdForKeySlot(slot) >= 0 ? slot : -1;
 	}
 
 	boolean hasItems(ItemContainer container)
