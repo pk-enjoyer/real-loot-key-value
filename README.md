@@ -7,7 +7,7 @@ The Old School RuneScape loot key chest can round the displayed value down to th
 
 This plugin fixes that UI problem by overlaying a more accurate value in the loot key chest. Coin stacks are counted as their exact GP amount, and item stacks can be valued with either RuneLite's actively traded Grand Exchange price or Jagex's Grand Exchange guide price.
 
-The **Price source** setting defaults to **RuneLite actively traded** and is independent of RuneLite's global item-price preference. Select **Jagex guide price** to use the Jagex price field intended to match in-game loot-key values such as key checks and clan loot messages. Both sources come from RuneLite's existing item-price cache, so the plugin does not need an examine action, chat-message parsing, or extra network requests.
+The **Price source** setting defaults to **RuneLite actively traded** and is independent of RuneLite's global item-price preference. Select **Jagex guide price** to use the Jagex price field intended to match in-game loot-key values such as key checks and clan loot messages. Both sources come from RuneLite's existing item-price cache, so the plugin does not need extra network requests.
 
 Display options can be combined. By default the plugin keeps a key icon on the tab and shows the exact value at the bottom of the chest, with optional compact tab values, top-right text, and high-value highlighting.
 
