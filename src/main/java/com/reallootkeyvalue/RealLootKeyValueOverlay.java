@@ -30,7 +30,6 @@ import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetItem;
-import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.overlay.WidgetItemOverlay;
 
@@ -54,7 +53,7 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 	private static final Pattern VIEW_TAB_PATTERN = Pattern.compile("(?i)\\bview\\s+tab\\s+(\\d+)\\b");
 
 	private final Client client;
-	private final ItemManager itemManager;
+	private final LootKeyPriceProvider priceProvider;
 	private final LootKeyValueCalculator calculator;
 	private final RealLootKeyValueConfig config;
 	private Rectangle pendingBottomTextBounds;
@@ -66,10 +65,10 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 	private int selectedKeySlot = -1;
 
 	@Inject
-	RealLootKeyValueOverlay(Client client, ItemManager itemManager, LootKeyValueCalculator calculator, RealLootKeyValueConfig config)
+	RealLootKeyValueOverlay(Client client, LootKeyPriceProvider priceProvider, LootKeyValueCalculator calculator, RealLootKeyValueConfig config)
 	{
 		this.client = client;
-		this.itemManager = itemManager;
+		this.priceProvider = priceProvider;
 		this.calculator = calculator;
 		this.config = config;
 		showOnInterfaces(InterfaceID.WILDY_LOOT_CHEST);
@@ -129,7 +128,7 @@ class RealLootKeyValueOverlay extends WidgetItemOverlay
 			return;
 		}
 
-		final long value = calculator.calculateGeValue(container, itemManager::getItemPrice);
+		final long value = calculator.calculateGeValue(container, priceProvider);
 		final Color valueTextColor = getValueTextColor(value);
 		if (config.showBottomText() && shouldRenderValueTextForKey(keySlot))
 		{

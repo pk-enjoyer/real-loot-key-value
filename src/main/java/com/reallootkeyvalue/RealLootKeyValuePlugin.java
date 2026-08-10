@@ -23,7 +23,7 @@ import net.runelite.client.ui.overlay.OverlayManager;
 
 @PluginDescriptor(
 	name = "Real Loot Key Value",
-	description = "Shows the real Grand Exchange value of PvP loot keys in the loot chest interface.",
+	description = "Shows RuneLite or Jagex Grand Exchange values of PvP loot keys in the loot chest interface.",
 	tags = {"loot", "key", "value", "pvp", "wilderness"}
 )
 public class RealLootKeyValuePlugin extends Plugin

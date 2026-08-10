@@ -24,7 +24,6 @@ import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.events.ConfigChanged;
-import net.runelite.client.game.ItemManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +40,7 @@ class RealLootKeyValueWidgets
 
 	private final Client client;
 	private final ClientThread clientThread;
-	private final ItemManager itemManager;
+	private final LootKeyPriceProvider priceProvider;
 	private final LootKeyValueCalculator calculator;
 	private final RealLootKeyValueConfig config;
 	private final Map<Integer, WidgetTextState> managedTabTextsBySlot = new HashMap<>();
@@ -51,13 +50,13 @@ class RealLootKeyValueWidgets
 	RealLootKeyValueWidgets(
 		Client client,
 		ClientThread clientThread,
-		ItemManager itemManager,
+		LootKeyPriceProvider priceProvider,
 		LootKeyValueCalculator calculator,
 		RealLootKeyValueConfig config)
 	{
 		this.client = client;
 		this.clientThread = clientThread;
-		this.itemManager = itemManager;
+		this.priceProvider = priceProvider;
 		this.calculator = calculator;
 		this.config = config;
 	}
@@ -84,8 +83,9 @@ class RealLootKeyValueWidgets
 	{
 		if (CONFIG_GROUP.equals(event.getGroup()))
 		{
-			log.debug("Loot key tab config changed key={} compact={} hideText={} highlightHigh={}",
+			log.debug("Loot key tab config changed key={} priceSource={} compact={} hideText={} highlightHigh={}",
 				event.getKey(),
+				config.priceSource(),
 				config.showCompactKeyTabValue(),
 				config.showKeyTabIcon(),
 				config.highlightHighValueText());
@@ -166,7 +166,7 @@ class RealLootKeyValueWidgets
 				continue;
 			}
 
-			final long value = calculator.calculateGeValue(container, itemManager::getItemPrice);
+			final long value = calculator.calculateGeValue(container, priceProvider);
 			final String formattedValue = LootKeyValueFormatter.formatTabValue(value);
 			log.debug("Loot key tab slot {} compact value widget={} index={} bounds={} currentText={} value={} formatted={}",
 				slot,

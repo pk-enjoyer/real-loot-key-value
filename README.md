@@ -1,11 +1,13 @@
 ![image](https://img.shields.io/endpoint?url=https://api.runelite.net/pluginhub/shields/installs/plugin/real-loot-key-value)
 # Real Loot Key Value
 
-Real Loot Key Value shows the real Grand Exchange value of PvP loot keys directly in the loot chest interface.
+Real Loot Key Value shows exact, configurable Grand Exchange values for PvP loot keys directly in the loot chest interface.
 
 The Old School RuneScape loot key chest can round the displayed value down to the nearest million. That makes the value look lower than it really is, sometimes by a large amount. A key worth 1.9M, for example, can appear much closer to 1M in the default interface.
 
-This plugin fixes that UI problem by overlaying a more accurate value in the loot key chest. Coin stacks are counted as their exact GP amount, and item stacks are valued using RuneLite Grand Exchange price data.
+This plugin fixes that UI problem by overlaying a more accurate value in the loot key chest. Coin stacks are counted as their exact GP amount, and item stacks can be valued with either RuneLite's actively traded Grand Exchange price or Jagex's Grand Exchange guide price.
+
+The **Price source** setting defaults to **RuneLite actively traded** and is independent of RuneLite's global item-price preference. Select **Jagex guide price** to use the Jagex price field intended to match in-game loot-key values such as key checks and clan loot messages. Both sources come from RuneLite's existing item-price cache, so the plugin does not need an examine action, chat-message parsing, or extra network requests.
 
 Display options can be combined. By default the plugin keeps a key icon on the tab and shows the exact value at the bottom of the chest, with optional compact tab values, top-right text, and high-value highlighting.
 

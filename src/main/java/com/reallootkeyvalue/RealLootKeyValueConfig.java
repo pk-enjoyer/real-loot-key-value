@@ -17,10 +17,21 @@ import net.runelite.client.config.ConfigItem;
 public interface RealLootKeyValueConfig extends Config
 {
 	@ConfigItem(
+		keyName = "priceSource",
+		name = "Price source",
+		description = "RuneLite actively traded uses Wiki prices with RuneLite safeguards. Jagex guide price uses the in-game Grand Exchange guide prices.",
+		position = 0
+	)
+	default LootKeyPriceSource priceSource()
+	{
+		return LootKeyPriceSource.RUNELITE;
+	}
+
+	@ConfigItem(
 		keyName = "showCompactKeyTabValue",
 		name = "Compact key tab value",
-		description = "Shows the real Grand Exchange value directly on the loot key tab.",
-		position = 0
+		description = "Shows the selected Grand Exchange value directly on the loot key tab.",
+		position = 1
 	)
 	default boolean showCompactKeyTabValue()
 	{
@@ -31,7 +42,7 @@ public interface RealLootKeyValueConfig extends Config
 		keyName = "showKeyTabIcon",
 		name = "Hide key tab text",
 		description = "Removes the original loot key tab text when the compact key tab value is disabled.",
-		position = 1
+		position = 2
 	)
 	default boolean showKeyTabIcon()
 	{
@@ -41,8 +52,8 @@ public interface RealLootKeyValueConfig extends Config
 	@ConfigItem(
 		keyName = "showBottomText",
 		name = "Bottom text",
-		description = "Shows the real Grand Exchange value at the bottom of the loot key chest.",
-		position = 2
+		description = "Shows the selected Grand Exchange value at the bottom of the loot key chest.",
+		position = 3
 	)
 	default boolean showBottomText()
 	{
@@ -52,8 +63,8 @@ public interface RealLootKeyValueConfig extends Config
 	@ConfigItem(
 		keyName = "showTopRightText",
 		name = "Top right text",
-		description = "Shows the real Grand Exchange value in the top-right corner of the loot key chest.",
-		position = 3
+		description = "Shows the selected Grand Exchange value in the top-right corner of the loot key chest.",
+		position = 4
 	)
 	default boolean showTopRightText()
 	{
@@ -64,7 +75,7 @@ public interface RealLootKeyValueConfig extends Config
 		keyName = "highlightHighValueText",
 		name = "Highlight high values",
 		description = "Colors values of 10m gp or more green.",
-		position = 4
+		position = 5
 	)
 	default boolean highlightHighValueText()
 	{

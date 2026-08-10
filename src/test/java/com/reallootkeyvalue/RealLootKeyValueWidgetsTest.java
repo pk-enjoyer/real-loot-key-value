@@ -18,7 +18,6 @@ import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
-import net.runelite.client.game.ItemManager;
 import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Test;
@@ -74,7 +73,7 @@ public class RealLootKeyValueWidgetsTest
 	{
 		final Client client = mock(Client.class);
 		final ClientThread clientThread = mock(ClientThread.class);
-		final ItemManager itemManager = mock(ItemManager.class);
+		final LootKeyPriceProvider priceProvider = mock(LootKeyPriceProvider.class);
 		final RealLootKeyValueConfig config = mock(RealLootKeyValueConfig.class);
 
 		doAnswer(invocation -> {
@@ -99,7 +98,7 @@ public class RealLootKeyValueWidgetsTest
 			return null;
 		});
 
-		widgets = new RealLootKeyValueWidgets(client, clientThread, itemManager, calculator, config);
+		widgets = new RealLootKeyValueWidgets(client, clientThread, priceProvider, calculator, config);
 	}
 
 	@Test
