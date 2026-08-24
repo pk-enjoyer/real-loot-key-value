@@ -1,4 +1,4 @@
-![image](https://img.shields.io/endpoint?url=https://api.runelite.net/pluginhub/shields/installs/plugin/real-loot-key-value) [![Report Issues Here](https://img.shields.io/badge/Report%20Issues%20Here-GitHub-red?logo=github)](https://github.com/pk-enjoyer/real-loot-key-value/issues/new)
+![image](https://img.shields.io/endpoint?url=https://api.runelite.net/pluginhub/shields/installs/plugin/real-loot-key-value)  [![Plugin Rank](http://img.shields.io/endpoint?url=https://api.runelite.net/pluginhub/shields/rank/plugin/real-loot-key-value)](https://runelite.net/plugin-hub) [![Report Issues Here](https://img.shields.io/badge/Report%20Issues%20Here-GitHub-red?logo=github)](https://github.com/pk-enjoyer/real-loot-key-value/issues/new)
 # Real Loot Key Value
 
 Real Loot Key Value shows exact, configurable Grand Exchange values for PvP loot keys directly in the loot chest interface.
