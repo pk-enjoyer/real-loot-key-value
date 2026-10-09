@@ -142,6 +142,19 @@ public class LootKeyValueCalculatorTest
 	}
 
 	@Test
+	public void pricesAboveIntegerMaxValueContributeTheirFullStackValue()
+	{
+		ItemContainer container = container(
+			new Item(ItemID.ABYSSAL_WHIP, 2),
+			new Item(ItemID.COINS, 100_000)
+		);
+
+		long value = calculator.calculateGeValue(container, itemId -> 3_000_000_000L);
+
+		assertEquals(6_000_100_000L, value);
+	}
+
+	@Test
 	public void invalidAndNegativePricesDoNotContribute()
 	{
 		ItemContainer container = container(

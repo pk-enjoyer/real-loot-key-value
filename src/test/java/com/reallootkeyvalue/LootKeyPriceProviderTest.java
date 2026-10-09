@@ -34,7 +34,7 @@ public class LootKeyPriceProviderTest
 	public void runeLiteSourceUsesActivelyTradedPrice()
 	{
 		when(config.priceSource()).thenReturn(LootKeyPriceSource.RUNELITE);
-		when(itemManager.getItemPriceWithSource(ItemID.ABYSSAL_WHIP, true)).thenReturn(1_500_000);
+		when(itemManager.getItemPriceWithSource(ItemID.ABYSSAL_WHIP, true)).thenReturn(1_500_000L);
 
 		assertEquals(1_500_000, priceProvider.getGePrice(ItemID.ABYSSAL_WHIP));
 		verify(itemManager, never()).getItemPriceWithSource(ItemID.ABYSSAL_WHIP, false);
@@ -44,9 +44,22 @@ public class LootKeyPriceProviderTest
 	public void jagexSourceUsesJagexGuidePrice()
 	{
 		when(config.priceSource()).thenReturn(LootKeyPriceSource.JAGEX);
-		when(itemManager.getItemPriceWithSource(ItemID.ABYSSAL_WHIP, false)).thenReturn(1_600_000);
+		when(itemManager.getItemPriceWithSource(ItemID.ABYSSAL_WHIP, false)).thenReturn(1_600_000L);
 
 		assertEquals(1_600_000, priceProvider.getGePrice(ItemID.ABYSSAL_WHIP));
 		verify(itemManager, never()).getItemPriceWithSource(ItemID.ABYSSAL_WHIP, true);
+	}
+
+	@Test
+	public void bothSourcesPreservePricesAboveIntegerMaxValue()
+	{
+		when(itemManager.getItemPriceWithSource(ItemID.ABYSSAL_WHIP, true)).thenReturn(3_000_000_000L);
+		when(itemManager.getItemPriceWithSource(ItemID.ABYSSAL_WHIP, false)).thenReturn(4_000_000_000L);
+
+		when(config.priceSource()).thenReturn(LootKeyPriceSource.RUNELITE);
+		assertEquals(3_000_000_000L, priceProvider.getGePrice(ItemID.ABYSSAL_WHIP));
+
+		when(config.priceSource()).thenReturn(LootKeyPriceSource.JAGEX);
+		assertEquals(4_000_000_000L, priceProvider.getGePrice(ItemID.ABYSSAL_WHIP));
 	}
 }

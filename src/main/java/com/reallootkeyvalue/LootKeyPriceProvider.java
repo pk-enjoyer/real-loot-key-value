@@ -26,7 +26,7 @@ class LootKeyPriceProvider implements LootKeyValueCalculator.PriceLookup
 	}
 
 	@Override
-	public int getGePrice(int itemId)
+	public long getGePrice(int itemId)
 	{
 		if (config.priceSource() == LootKeyPriceSource.JAGEX)
 		{

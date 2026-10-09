@@ -151,8 +151,8 @@ class LootKeyValueCalculator
 				continue;
 			}
 
-			final int gePrice = Math.max(0, priceLookup.getGePrice(itemId));
-			total += (long) gePrice * quantity;
+			final long gePrice = Math.max(0L, priceLookup.getGePrice(itemId));
+			total += gePrice * quantity;
 		}
 
 		return total;
@@ -165,6 +165,6 @@ class LootKeyValueCalculator
 
 	interface PriceLookup
 	{
-		int getGePrice(int itemId);
+		long getGePrice(int itemId);
 	}
 }
